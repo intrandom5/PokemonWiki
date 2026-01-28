@@ -47,17 +47,34 @@ export async function GET(request: NextRequest, { params }: Params) {
             WHERE pa.pokemon_id = ?
         `).all(pokemonId);
 
-        // 배우는 기술 (레벨업 기준 상위 20개만)
-        const moves = db.prepare(`
+        // 배우는 기술 (습득 방식별로 분류)
+        const allMoves = db.prepare(`
             SELECT m.name_ko, m.power, m.accuracy, m.pp, m.damage_class, 
-                   pm.level_learned, t.name_ko as type_name
+                   pm.level_learned, pm.learn_method, t.name_ko as type_name
             FROM pokemon_moves pm
             JOIN moves m ON pm.move_id = m.id
             LEFT JOIN types t ON m.type_id = t.id
-            WHERE pm.pokemon_id = ? AND pm.learn_method = 'level-up'
-            ORDER BY pm.level_learned
-            LIMIT 20
-        `).all(pokemonId);
+            WHERE pm.pokemon_id = ?
+            ORDER BY pm.learn_method, pm.level_learned, m.name_ko
+        `).all(pokemonId) as any[];
+
+        // 습득 방식별로 그룹화
+        const movesByMethod: Record<string, any[]> = {
+            'level-up': [],
+            'machine': [],
+            'egg': [],
+            'tutor': [],
+            'other': []
+        };
+
+        for (const move of allMoves) {
+            const method = move.learn_method;
+            if (movesByMethod[method]) {
+                movesByMethod[method].push(move);
+            } else {
+                movesByMethod['other'].push(move);
+            }
+        }
 
         // 진화 정보 - 전체 진화 체인 가져오기
         // 1. 먼저 진화 체인의 시작점(1단계)을 찾습니다
@@ -105,7 +122,7 @@ export async function GET(request: NextRequest, { params }: Params) {
             types,
             stats,
             abilities,
-            moves,
+            moves: movesByMethod,
             evolutions
         });
     } catch (error: any) {

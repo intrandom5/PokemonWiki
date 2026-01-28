@@ -134,15 +134,17 @@ async function collectPokemon() {
                     insertPokeType.run(pokemon.id, typeId, t.slot);
                 }
 
-                // 4. 기술 (너무 많으므로 레벨업으로 배우는 기술 중 일부만 저장하거나 최적화 필요)
-                // 여기서는 기술 ID와 방식만 저장 (중복 방지 위해 간단히)
-                const levelUpMoves = pokemon.moves.filter(m =>
-                    m.version_group_details.some(d => d.move_learn_method.name === 'level-up')
-                );
-                for (const m of levelUpMoves) {
+                // 4. 기술 (모든 습득 방식 수집: level-up, machine, egg, tutor 등)
+                // 최신 버전 그룹 기준으로 저장
+                for (const m of pokemon.moves) {
                     const moveId = parseInt(m.move.url.split('/').filter(Boolean).pop()!);
-                    const detail = m.version_group_details[0]; // 가장 최근 버전 기준
-                    insertPokeMove.run(pokemon.id, moveId, 'level-up', detail.level_learned_at);
+                    // 가장 최근 버전 그룹의 정보 사용 (보통 첫 번째가 최신)
+                    const detail = m.version_group_details[0];
+                    if (detail) {
+                        const learnMethod = detail.move_learn_method.name;
+                        const levelLearned = detail.level_learned_at || null;
+                        insertPokeMove.run(pokemon.id, moveId, learnMethod, levelLearned);
+                    }
                 }
             }
             console.log(`[${species.id}] ${nameKoBase} 수집 완료`);

@@ -48,7 +48,7 @@ interface PokemonDetail {
     total: number;
   };
   abilities: Array<{ name_ko: string; description: string; is_hidden: number }>;
-  moves: Array<{ name_ko: string; level_learned: number; type_name: string; power: number }>;
+  moves: Record<string, Array<{ name_ko: string; level_learned: number; type_name: string; power: number; learn_method: string }>>;
   evolutions: Array<{ from_name: string; to_name: string; trigger: string; min_level: number }>;
 }
 
@@ -70,6 +70,7 @@ export default function Home() {
   // 모달 상태
   const [selectedPokemon, setSelectedPokemon] = useState<PokemonDetail | null>(null);
   const [modalLoading, setModalLoading] = useState(false);
+  const [selectedMoveTab, setSelectedMoveTab] = useState<string>('level-up');
 
   // 포켓몬 목록 로드
   const loadPokemon = useCallback(async () => {
@@ -632,23 +633,76 @@ export default function Home() {
                 )}
 
                 {/* 배우는 기술 */}
-                {selectedPokemon.moves && selectedPokemon.moves.length > 0 && (
+                {selectedPokemon.moves && (
                   <div>
-                    <h3 className="text-amber-400 font-semibold mb-4 text-lg">⚔️ 배우는 기술 (레벨업)</h3>
-                    <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                      {selectedPokemon.moves.map((move, i) => (
+                    <h3 className="text-amber-400 font-semibold mb-4 text-lg">⚔️ 배우는 기술</h3>
+
+                    {/* 탭 버튼 */}
+                    <div className="flex gap-2 mb-4 flex-wrap">
+                      <button
+                        onClick={() => setSelectedMoveTab('level-up')}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all ${selectedMoveTab === 'level-up'
+                          ? 'bg-amber-500 text-white'
+                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          }`}
+                      >
+                        레벨업 ({selectedPokemon.moves['level-up']?.length || 0})
+                      </button>
+                      <button
+                        onClick={() => setSelectedMoveTab('machine')}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all ${selectedMoveTab === 'machine'
+                          ? 'bg-amber-500 text-white'
+                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          }`}
+                      >
+                        기술머신 ({selectedPokemon.moves['machine']?.length || 0})
+                      </button>
+                      <button
+                        onClick={() => setSelectedMoveTab('egg')}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all ${selectedMoveTab === 'egg'
+                          ? 'bg-amber-500 text-white'
+                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          }`}
+                      >
+                        유전기 ({selectedPokemon.moves['egg']?.length || 0})
+                      </button>
+                      <button
+                        onClick={() => setSelectedMoveTab('tutor')}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all ${selectedMoveTab === 'tutor'
+                          ? 'bg-amber-500 text-white'
+                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          }`}
+                      >
+                        가르침 ({selectedPokemon.moves['tutor']?.length || 0})
+                      </button>
+                    </div>
+
+                    {/* 기술 목록 */}
+                    <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                      {selectedPokemon.moves[selectedMoveTab]?.map((move: any, i: number) => (
                         <div key={i} className="bg-slate-800 rounded-lg p-2 text-sm">
                           <div className="flex justify-between items-center">
                             <span className="text-white">{move.name_ko}</span>
-                            <span className="text-slate-500">Lv.{move.level_learned}</span>
+                            {selectedMoveTab === 'level-up' && move.level_learned && (
+                              <span className="text-slate-500">Lv.{move.level_learned}</span>
+                            )}
                           </div>
-                          {move.type_name && (
-                            <span className={`type-${move.type_name} px-2 py-0.5 rounded text-xs mt-1 inline-block`}>
-                              {move.type_name}
-                            </span>
-                          )}
+                          <div className="flex gap-2 mt-1 items-center">
+                            {move.type_name && (
+                              <span className={`type-${move.type_name} px-2 py-0.5 rounded text-xs inline-block`}>
+                                {move.type_name}
+                              </span>
+                            )}
+                            {move.power && (
+                              <span className="text-slate-400 text-xs">위력: {move.power}</span>
+                            )}
+                          </div>
                         </div>
-                      ))}
+                      )) || (
+                          <div className="col-span-2 text-center text-slate-400 py-4">
+                            해당 방식으로 배우는 기술이 없습니다.
+                          </div>
+                        )}
                     </div>
                   </div>
                 )}
