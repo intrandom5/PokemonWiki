@@ -50,6 +50,7 @@ export async function GET(request: NextRequest, { params }: Params) {
         // 배우는 기술 (습득 방식별로 분류)
         const allMoves = db.prepare(`
             SELECT m.name_ko, m.power, m.accuracy, m.pp, m.damage_class, 
+                   m.description, m.priority, m.target,
                    pm.level_learned, pm.learn_method, t.name_ko as type_name
             FROM pokemon_moves pm
             JOIN moves m ON pm.move_id = m.id

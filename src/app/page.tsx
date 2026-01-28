@@ -48,7 +48,17 @@ interface PokemonDetail {
     total: number;
   };
   abilities: Array<{ name_ko: string; description: string; is_hidden: number }>;
-  moves: Record<string, Array<{ name_ko: string; level_learned: number; type_name: string; power: number; learn_method: string }>>;
+  moves: Record<string, Array<{
+    name_ko: string;
+    level_learned: number;
+    type_name: string;
+    power: number;
+    learn_method: string;
+    description: string;
+    accuracy: number;
+    pp: number;
+    damage_class: string;
+  }>>;
   evolutions: Array<{ from_name: string; to_name: string; trigger: string; min_level: number }>;
 }
 
@@ -680,24 +690,45 @@ export default function Home() {
                     {/* 기술 목록 */}
                     <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
                       {selectedPokemon.moves[selectedMoveTab]?.map((move: any, i: number) => (
-                        <div key={i} className="bg-slate-800 rounded-lg p-2 text-sm">
-                          <div className="flex justify-between items-center">
-                            <span className="text-white">{move.name_ko}</span>
-                            {selectedMoveTab === 'level-up' && move.level_learned && (
-                              <span className="text-slate-500">Lv.{move.level_learned}</span>
-                            )}
-                          </div>
-                          <div className="flex gap-2 mt-1 items-center">
-                            {move.type_name && (
-                              <span className={`type-${move.type_name} px-2 py-0.5 rounded text-xs inline-block`}>
-                                {move.type_name}
+                        <details key={i} className="group bg-slate-800 rounded-lg p-2 text-sm cursor-pointer open:bg-slate-700/80 transition-colors">
+                          <summary className="list-none flex flex-col gap-1">
+                            <div className="flex justify-between items-center">
+                              <span className="text-white font-medium group-open:text-amber-400 transition-colors">{move.name_ko}</span>
+                              {selectedMoveTab === 'level-up' && move.level_learned && (
+                                <span className="text-slate-500 text-xs">Lv.{move.level_learned}</span>
+                              )}
+                            </div>
+                            <div className="flex gap-2 items-center">
+                              {move.type_name && (
+                                <span className={`type-${move.type_name} px-2 py-0.5 rounded text-xs inline-block text-white/90`}>
+                                  {move.type_name}
+                                </span>
+                              )}
+                              {move.power ? (
+                                <span className="text-slate-400 text-xs">위력: {move.power}</span>
+                              ) : (
+                                <span className="text-slate-500 text-xs">변화기</span>
+                              )}
+                            </div>
+                          </summary>
+
+                          {/* 상세 정보 */}
+                          <div className="mt-2 pt-2 border-t border-slate-600/50 text-xs text-slate-300">
+                            <p className="mb-2 leading-relaxed">{move.description || '설명이 없습니다.'}</p>
+                            <div className="grid grid-cols-2 gap-y-1 text-slate-400">
+                              <span>🎯 명중률: <span className="text-slate-200">{move.accuracy || '-'}%</span></span>
+                              <span>💧 PP: <span className="text-slate-200">{move.pp || '-'}</span></span>
+                              <span className="col-span-2">
+                                💥 분류: <span className={`${move.damage_class === 'physical' ? 'text-orange-400' :
+                                    move.damage_class === 'special' ? 'text-blue-400' : 'text-slate-400'
+                                  }`}>
+                                  {move.damage_class === 'physical' ? '물리' :
+                                    move.damage_class === 'special' ? '특수' : '변화'}
+                                </span>
                               </span>
-                            )}
-                            {move.power && (
-                              <span className="text-slate-400 text-xs">위력: {move.power}</span>
-                            )}
+                            </div>
                           </div>
-                        </div>
+                        </details>
                       )) || (
                           <div className="col-span-2 text-center text-slate-400 py-4">
                             해당 방식으로 배우는 기술이 없습니다.
