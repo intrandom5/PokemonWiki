@@ -26,24 +26,128 @@ body {
 }
 
 /* 타입별 색상 */
-.type-노말 { background: #A8A878; }
-.type-불꽃 { background: #F08030; }
-.type-물 { background: #6890F0; }
-.type-풀 { background: #78C850; }
-.type-전기 { background: #F8D030; color: #1e293b; }
-.type-얼음 { background: #98D8D8; color: #1e293b; }
-.type-격투 { background: #C03028; }
-.type-독 { background: #A040A0; }
-.type-땅 { background: #E0C068; color: #1e293b; }
-.type-비행 { background: #A890F0; }
-.type-에스퍼 { background: #F85888; }
-.type-벌레 { background: #A8B820; }
-.type-바위 { background: #B8A038; }
-.type-고스트 { background: #705898; }
-.type-드래곤 { background: #7038F8; }
-.type-악 { background: #705848; }
-.type-강철 { background: #B8B8D0; color: #1e293b; }
-.type-페어리 { background: #EE99AC; color: #1e293b; }
+.type-노말 {
+    background: #A8A878;
+}
+
+.type-불꽃 {
+    background: #F08030;
+}
+
+.type-물 {
+    background: #6890F0;
+}
+
+.type-풀 {
+    background: #78C850;
+}
+
+.type-전기 {
+    background: #F8D030;
+    color: #1e293b;
+}
+
+.type-얼음 {
+    background: #98D8D8;
+    color: #1e293b;
+}
+
+.type-격투 {
+    background: #C03028;
+}
+
+.type-독 {
+    background: #A040A0;
+}
+
+.type-땅 {
+    background: #E0C068;
+    color: #1e293b;
+}
+
+.type-비행 {
+    background: #A890F0;
+}
+
+.type-에스퍼 {
+    background: #F85888;
+}
+
+.type-벌레 {
+    background: #A8B820;
+}
+
+.type-바위 {
+    background: #B8A038;
+}
+
+.type-고스트 {
+    background: #705898;
+}
+
+.type-드래곤 {
+    background: #7038F8;
+}
+
+.type-악 {
+    background: #705848;
+}
+
+.type-강철 {
+    background: #B8B8D0;
+    color: #1e293b;
+}
+
+.type-페어리 {
+    background: #EE99AC;
+    color: #1e293b;
+}
+
+/* 세대별 테마 색상 */
+.gen-1 {
+    background: #ef5350;
+    color: white;
+}
+
+.gen-2 {
+    background: #ffa726;
+    color: white;
+}
+
+.gen-3 {
+    background: #66bb6a;
+    color: white;
+}
+
+.gen-4 {
+    background: #26c6da;
+    color: white;
+}
+
+.gen-5 {
+    background: #26a69a;
+    color: white;
+}
+
+.gen-6 {
+    background: #42a5f5;
+    color: white;
+}
+
+.gen-7 {
+    background: #ab47bc;
+    color: white;
+}
+
+.gen-8 {
+    background: #78909c;
+    color: white;
+}
+
+.gen-9 {
+    background: #ec407a;
+    color: white;
+}
 
 /* 카드 호버 애니메이션 */
 .pokemon-card {
@@ -80,8 +184,15 @@ body {
 
 /* 로딩 애니메이션 */
 @keyframes pulse-glow {
-    0%, 100% { opacity: 0.6; }
-    50% { opacity: 1; }
+
+    0%,
+    100% {
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 1;
+    }
 }
 
 .loading-pulse {
@@ -91,12 +202,24 @@ body {
 /* 필터 버튼 */
 .filter-btn {
     transition: all 0.2s ease;
+    opacity: 0.9;
 }
 
 .filter-btn:hover {
     transform: scale(1.05);
+    opacity: 1;
 }
 
 .filter-btn.active {
-    ring: 2px solid var(--primary);
+    opacity: 1 !important;
+    transform: scale(1.05);
+    ring: 2px solid white;
+    filter: saturate(1.5) brightness(1.1);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+}
+
+/* 비활성 필터 상태 */
+.filter-dimmed {
+    opacity: 0.3 !important;
+    filter: grayscale(0.6) brightness(0.7) !important;
 }

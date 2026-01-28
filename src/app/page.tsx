@@ -57,9 +57,9 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
 
-  // 필터 상태
-  const [selectedGeneration, setSelectedGeneration] = useState<number | null>(null);
-  const [selectedType, setSelectedType] = useState<string | null>(null);
+  // 필터 상태 (배열로 변경)
+  const [selectedGenerations, setSelectedGenerations] = useState<number[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [page, setPage] = useState(1);
 
   // 검색 상태
@@ -79,12 +79,13 @@ export default function Home() {
       params.set("limit", "24");
       params.set("page", page.toString());
 
-      if (selectedGeneration) {
-        params.set("generation", selectedGeneration.toString());
-      }
-      if (selectedType) {
-        params.set("type", selectedType);
-      }
+      selectedGenerations.forEach(gen => {
+        params.append("generation", gen.toString());
+      });
+
+      selectedTypes.forEach(type => {
+        params.append("type", type);
+      });
 
       const res = await fetch(`/api/pokemon?${params.toString()}`);
       const data = await res.json();
@@ -96,20 +97,32 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [page, selectedGeneration, selectedType]);
+  }, [page, selectedGenerations, selectedTypes]);
 
   useEffect(() => {
     loadPokemon();
-  }, [loadPokemon]);
+  }, [loadPokemon, selectedGenerations, selectedTypes]);
 
-  // 필터 변경 시 페이지 리셋
+  // 필터 변경 시 페이지 리셋 (토글 방식 배열 관리)
   const handleGenerationChange = (gen: number | null) => {
-    setSelectedGeneration(gen);
+    if (gen === null) {
+      setSelectedGenerations([]);
+    } else {
+      setSelectedGenerations(prev =>
+        prev.includes(gen) ? prev.filter(g => g !== gen) : [...prev, gen]
+      );
+    }
     setPage(1);
   };
 
   const handleTypeChange = (type: string | null) => {
-    setSelectedType(type);
+    if (type === null) {
+      setSelectedTypes([]);
+    } else {
+      setSelectedTypes(prev =>
+        prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
+      );
+    }
     setPage(1);
   };
 
@@ -240,9 +253,9 @@ export default function Home() {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => handleGenerationChange(null)}
-              className={`filter-btn px-4 py-2 rounded-lg font-medium transition-all ${selectedGeneration === null
-                ? "bg-amber-500 text-white"
-                : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+              className={`filter-btn px-4 py-2 rounded-lg font-medium transition-all ${selectedGenerations.length === 0
+                ? "bg-amber-500 text-white active"
+                : "bg-slate-700 text-slate-300 filter-dimmed"
                 }`}
             >
               전체
@@ -251,9 +264,9 @@ export default function Home() {
               <button
                 key={gen}
                 onClick={() => handleGenerationChange(gen)}
-                className={`filter-btn px-4 py-2 rounded-lg font-medium transition-all ${selectedGeneration === gen
-                  ? "bg-amber-500 text-white"
-                  : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                className={`filter-btn px-4 py-2 rounded-lg font-medium transition-all gen-${gen} ${selectedGenerations.includes(gen)
+                  ? "active"
+                  : selectedGenerations.length > 0 ? "filter-dimmed" : ""
                   }`}
               >
                 {gen}세대
@@ -268,9 +281,9 @@ export default function Home() {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => handleTypeChange(null)}
-              className={`filter-btn px-4 py-2 rounded-lg font-medium transition-all ${selectedType === null
-                ? "bg-amber-500 text-white"
-                : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+              className={`filter-btn px-4 py-2 rounded-lg font-medium transition-all ${selectedTypes.length === 0
+                ? "bg-amber-500 text-white active"
+                : "bg-slate-700 text-slate-300 filter-dimmed"
                 }`}
             >
               전체
@@ -279,9 +292,9 @@ export default function Home() {
               <button
                 key={type}
                 onClick={() => handleTypeChange(type)}
-                className={`filter-btn px-4 py-2 rounded-lg font-medium transition-all ${selectedType === type
-                  ? `type-${type} text-white`
-                  : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                className={`filter-btn px-4 py-2 rounded-lg font-medium transition-all type-${type} ${selectedTypes.includes(type)
+                  ? "active"
+                  : selectedTypes.length > 0 ? "filter-dimmed" : ""
                   }`}
               >
                 {type}
