@@ -1,26 +1,102 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+    --background: #0f172a;
+    --foreground: #f1f5f9;
+    --card-bg: #1e293b;
+    --card-hover: #334155;
+    --primary: #f59e0b;
+    --primary-dark: #d97706;
+    --accent: #06b6d4;
+    --muted: #64748b;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --font-sans: var(--font-geist-sans);
+    --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    color: var(--foreground);
+    font-family: "Geist", Arial, Helvetica, sans-serif;
+    min-height: 100vh;
+}
+
+/* 타입별 색상 */
+.type-노말 { background: #A8A878; }
+.type-불꽃 { background: #F08030; }
+.type-물 { background: #6890F0; }
+.type-풀 { background: #78C850; }
+.type-전기 { background: #F8D030; color: #1e293b; }
+.type-얼음 { background: #98D8D8; color: #1e293b; }
+.type-격투 { background: #C03028; }
+.type-독 { background: #A040A0; }
+.type-땅 { background: #E0C068; color: #1e293b; }
+.type-비행 { background: #A890F0; }
+.type-에스퍼 { background: #F85888; }
+.type-벌레 { background: #A8B820; }
+.type-바위 { background: #B8A038; }
+.type-고스트 { background: #705898; }
+.type-드래곤 { background: #7038F8; }
+.type-악 { background: #705848; }
+.type-강철 { background: #B8B8D0; color: #1e293b; }
+.type-페어리 { background: #EE99AC; color: #1e293b; }
+
+/* 카드 호버 애니메이션 */
+.pokemon-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pokemon-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* 검색창 글로우 효과 */
+.search-input:focus {
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+}
+
+/* 스크롤바 스타일 */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+/* 로딩 애니메이션 */
+@keyframes pulse-glow {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+.loading-pulse {
+    animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+/* 필터 버튼 */
+.filter-btn {
+    transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+    transform: scale(1.05);
+}
+
+.filter-btn.active {
+    ring: 2px solid var(--primary);
 }

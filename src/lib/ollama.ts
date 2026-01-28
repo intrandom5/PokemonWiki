@@ -16,7 +16,7 @@ async function generateSQL(question: string): Promise<string> {
    - form_name: 리전폼 이름 (알로라, 가라르 등). 빈 문자열이면 기본 폼.
 2. types (id, name_ko, name_en)
 3. pokemon_types (pokemon_id, type_id, slot)
-4. stats (pokemon_id, hp, attack, defense, sp_attack, sp_defense, speed, total)
+4. stats (pokemon_id, hp, attack, defense, sp_attack, sp_defense, speed, total) - 포켓몬 능력치/종족값 정보
 5. moves (id, name_ko, name_en, type_id, power, accuracy, pp, damage_class)
 6. pokemon_moves (pokemon_id, move_id, learn_method, level_learned)
 7. evolutions (from_pokemon_id, to_pokemon_id, trigger, min_level, item, condition)
@@ -141,5 +141,63 @@ export async function askPokemonWiki(question: string) {
             sql: "",
             results: []
         };
+    }
+}
+
+/**
+ * 스트리밍 버전: 답변을 실시간으로 생성합니다.
+ */
+export async function* askPokemonWikiStream(question: string) {
+    const db = getDatabase();
+
+    try {
+        // 1. SQL 생성 (스트리밍 아님)
+        console.log(`[Ollama] SQL 생성 중: "${question}"`);
+        const sql = await generateSQL(question);
+        console.log(`[SQL] ${sql}`);
+
+        // 2. DB 실행
+        const results = db.prepare(sql).all();
+        console.log(`[Result] ${results.length}건 조회됨`);
+
+        // SQL 정보 먼저 전송
+        yield { type: 'sql', content: sql };
+
+        // 3. 답변 스트리밍 생성
+        const answerPrompt = `
+당신은 포켓몬 전문가입니다. 아래의 데이터베이스 조회 결과를 바탕으로 사용자의 질문에 친절하게 한국어로 답변해 주세요.
+
+[질문]
+${question}
+
+[실행된 SQL]
+${sql}
+
+[조회 결과]
+${JSON.stringify(results, null, 2)}
+
+[답변 가이드]
+- 질문에 대한 **정확한 팩트**만 간결하게 답변하세요.
+- **리전 폼 구분 필수**: 조회 결과에 form_name이 다른 행이 여러 개 있으면, 반드시 각 폼을 구분하여 설명하세요.
+- form_name이 비어있으면 "일반" 또는 "기본 폼"으로 표현하세요.
+- 답변은 한국어로, 핵심 위주로 작성하세요.
+`;
+
+        console.log(`[Ollama] 스트리밍 답변 생성 중...`);
+        const stream = await ollama.generate({
+            model: MODEL,
+            prompt: answerPrompt,
+            stream: true,
+        });
+
+        for await (const chunk of stream) {
+            yield { type: 'answer', content: chunk.response };
+        }
+
+        yield { type: 'done', content: '' };
+
+    } catch (error: any) {
+        console.error('LLM 처리 중 오류:', error);
+        yield { type: 'error', content: error.message };
     }
 }
