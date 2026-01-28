@@ -540,17 +540,59 @@ export default function Home() {
                           if (evo.trigger === 'trade') {
                             conditions.push('교환');
                           }
-                          if (evo.trigger === 'level-up' && !evo.min_level && !evo.item) {
-                            if (evo.condition?.includes('high-friendship') || evo.condition?.includes('friendship')) {
-                              conditions.push('친밀도');
-                            }
-                          }
+
+                          // condition 문자열 파싱 (예: "friendship:160,time:day")
                           if (evo.condition) {
-                            if (evo.condition.includes('day')) conditions.push('낮');
-                            if (evo.condition.includes('night')) conditions.push('밤');
-                            if (evo.condition.includes('rain')) conditions.push('비');
-                            if (evo.condition.includes('friendship') && !conditions.includes('친밀도')) {
-                              conditions.push('친밀도');
+                            const condParts = evo.condition.split(',');
+                            for (const part of condParts) {
+                              const [key, value] = part.split(':');
+
+                              if (key === 'friendship' || key === 'affection') {
+                                conditions.push('친밀도');
+                              } else if (key === 'time') {
+                                if (value === 'day') conditions.push('낮');
+                                else if (value === 'night') conditions.push('밤');
+                              } else if (key === 'rain') {
+                                conditions.push('비');
+                              } else if (key === 'held_item') {
+                                // 지니고 있는 아이템
+                                const itemNames: Record<string, string> = {
+                                  'metal-coat': '금속코트 소지',
+                                  'kings-rock': '왕의 징표석 소지',
+                                  'dragon-scale': '용의 비늘 소지',
+                                  'upgrade': '업그레이드 소지',
+                                  'dubious-disc': '괴상한 패치 소지',
+                                  'protector': '프로텍터 소지',
+                                  'electirizer': '에레키부스터 소지',
+                                  'magmarizer': '마그마부스터 소지',
+                                  'razor-fang': '예리한 이빨 소지',
+                                  'razor-claw': '예리한 손톱 소지',
+                                  'prism-scale': '고운비늘 소지',
+                                  'reaper-cloth': '영계의 천 소지',
+                                  'deep-sea-tooth': '심해의 이빨 소지',
+                                  'deep-sea-scale': '심해의 비늘 소지',
+                                  'oval-stone': '타원형의 돌 소지',
+                                };
+                                conditions.push(itemNames[value] || `${value} 소지`);
+                              } else if (key === 'known_move') {
+                                conditions.push(`${value} 습득`);
+                              } else if (key === 'known_move_type') {
+                                conditions.push(`${value}타입 기술 습득`);
+                              } else if (key === 'location') {
+                                conditions.push(`특정 장소`);
+                              } else if (key === 'physical_stats') {
+                                if (value === '1') conditions.push('공격 > 방어');
+                                else if (value === '-1') conditions.push('방어 > 공격');
+                                else if (value === '0') conditions.push('공격 = 방어');
+                              } else if (key === 'upside_down') {
+                                conditions.push('거꾸로');
+                              } else if (key === 'party_species') {
+                                conditions.push('특정 포켓몬 동행');
+                              } else if (key === 'party_type') {
+                                conditions.push(`${value}타입 동행`);
+                              } else if (key === 'beauty') {
+                                conditions.push('아름다움');
+                              }
                             }
                           }
 

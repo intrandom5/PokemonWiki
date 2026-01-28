@@ -173,13 +173,32 @@ async function collectEvolutions(chainUrls: string[]) {
                     const toId = parseInt(next.species.url.split('/').filter(Boolean).pop()!);
                     const detail = next.evolution_details[0];
 
+                    // 진화 조건 수집
+                    const conditions: string[] = [];
+                    if (detail?.min_happiness) conditions.push(`friendship:${detail.min_happiness}`);
+                    if (detail?.time_of_day) conditions.push(`time:${detail.time_of_day}`);
+                    if (detail?.location) conditions.push(`location:${detail.location.name}`);
+                    if (detail?.held_item) conditions.push(`held_item:${detail.held_item.name}`);
+                    if (detail?.known_move) conditions.push(`known_move:${detail.known_move.name}`);
+                    if (detail?.known_move_type) conditions.push(`known_move_type:${detail.known_move_type.name}`);
+                    if (detail?.min_beauty) conditions.push(`beauty:${detail.min_beauty}`);
+                    if (detail?.min_affection) conditions.push(`affection:${detail.min_affection}`);
+                    if (detail?.needs_overworld_rain) conditions.push('rain:true');
+                    if (detail?.party_species) conditions.push(`party_species:${detail.party_species.name}`);
+                    if (detail?.party_type) conditions.push(`party_type:${detail.party_type.name}`);
+                    if (detail?.relative_physical_stats !== null && detail?.relative_physical_stats !== undefined) {
+                        conditions.push(`physical_stats:${detail.relative_physical_stats}`);
+                    }
+                    if (detail?.trade_species) conditions.push(`trade_species:${detail.trade_species.name}`);
+                    if (detail?.turn_upside_down) conditions.push('upside_down:true');
+
                     insertEvo.run(
                         fromId,
                         toId,
                         detail?.trigger?.name || 'unknown',
                         detail?.min_level || null,
                         detail?.item?.name || null,
-                        '' // 추가 조건은 복잡하므로 비워둠
+                        conditions.length > 0 ? conditions.join(',') : null
                     );
                     processChain(next);
                 }
