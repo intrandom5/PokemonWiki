@@ -112,6 +112,29 @@ export function initializeDatabase() {
     );
   `);
 
+  // 특성 테이블
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS abilities (
+      id INTEGER PRIMARY KEY,
+      name_ko TEXT NOT NULL,
+      name_en TEXT NOT NULL,
+      description TEXT
+    );
+  `);
+
+  // 포켓몬-특성 연결 테이블
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS pokemon_abilities (
+      pokemon_id INTEGER,
+      ability_id INTEGER,
+      is_hidden BOOLEAN,
+      slot INTEGER,
+      PRIMARY KEY (pokemon_id, ability_id),
+      FOREIGN KEY (pokemon_id) REFERENCES pokemon(id),
+      FOREIGN KEY (ability_id) REFERENCES abilities(id)
+    );
+  `);
+
   // 인덱스 생성 (검색 성능 향상)
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_pokemon_name_ko ON pokemon(name_ko);

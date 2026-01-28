@@ -20,6 +20,8 @@ async function generateSQL(question: string): Promise<string> {
 5. moves (id, name_ko, name_en, type_id, power, accuracy, pp, damage_class)
 6. pokemon_moves (pokemon_id, move_id, learn_method, level_learned)
 7. evolutions (from_pokemon_id, to_pokemon_id, trigger, min_level, item, condition)
+8. abilities (id, name_ko, name_en, description) - 포켓몬 특성 정보
+9. pokemon_abilities (pokemon_id, ability_id, is_hidden, slot) - 포켓몬이 가진 특성 연결
 
 [예시 쿼리]
 -- 포켓몬 타입 조회 (폼별로 구분):
@@ -36,9 +38,17 @@ FROM pokemon p
 JOIN stats s ON p.id = s.pokemon_id
 ORDER BY s.speed DESC LIMIT 1;
 
+-- 포켓몬 특성 조회 (is_hidden=1이면 숨겨진 특성):
+SELECT p.name_ko, p.form_name, a.name_ko AS ability_name, pa.is_hidden
+FROM pokemon p
+JOIN pokemon_abilities pa ON p.id = pa.pokemon_id
+JOIN abilities a ON pa.ability_id = a.id
+WHERE p.name_ko = '번치코';
+
 [주의사항]
 - SELECT 쿼리만 출력. 설명/주석 금지.
 - 위에 명시된 테이블만 사용하세요. forms 같은 테이블은 존재하지 않습니다.
+- "특성"을 물어보면 abilities 테이블을 사용하세요. stats(능력치)와 혼동하지 마세요.
 - 별칭(alias)을 쓸 때 FROM/JOIN에서 정의한 별칭만 SELECT에서 사용하세요.
 
 질문: "${question}"
