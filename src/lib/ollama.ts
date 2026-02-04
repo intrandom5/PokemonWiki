@@ -5,12 +5,79 @@ const ollama = new Ollama({ host: 'http://localhost:11434' });
 const MODEL = 'gemma3'; // 사용자님이 지정하신 모델 (gemma2 또는 gemma3)
 
 /**
+ * 0단계 A: 질문에서 포켓몬 이름 후보를 추출합니다.
+ */
+async function extractEntities(question: string): Promise<string[]> {
+    const prompt = `
+당신은 포켓몬 언어 모델입니다. 사용자의 질문에서 포켓몬의 이름(또는 이름의 일부)만 추출하여 쉼표(,)로 구분된 목록으로 출력하세요.
+포켓몬 이름이 아닌 단어는 무시하세요.
+
+질문: "피카츄와 파이리의 공격력을 비교해줘"
+추출: 피카츄, 파이리
+
+질문: "갸라도스 타입의 약점이 뭐야?"
+추출: 갸라도스
+
+질문: "알로라 식스테일의 특성이 뭐야?"
+추출: 식스테일, 알로라
+
+질문: "${question}"
+추출:`;
+
+    const response = await ollama.generate({
+        model: MODEL,
+        prompt: prompt,
+        stream: false,
+        options: { temperature: 0 }
+    });
+
+    return response.response.split(',').map(s => s.trim()).filter(s => s.length > 0);
+}
+
+/**
+ * 0단계 B: 추출된 후보군을 DB에서 검색하여 실제 이름을 확인합니다.
+ */
+async function validateEntities(entities: string[]): Promise<string[]> {
+    const db = getDatabase();
+    const validated: string[] = [];
+
+    for (const entity of entities) {
+        // 정확히 일치하거나, 포함하는 이름 검색 (LIKE)
+        const rows = db.prepare(`
+            SELECT DISTINCT name_ko 
+            FROM pokemon 
+            WHERE name_ko LIKE ? OR name_ko LIKE ?
+            LIMIT 3
+        `).all(`%${entity}%`, `%${entity.replace(/알로라|가라르|히스이|팔데아/g, '').trim()}%`) as { name_ko: string }[];
+
+        rows.forEach(row => {
+            if (!validated.includes(row.name_ko)) {
+                validated.push(row.name_ko);
+            }
+        });
+    }
+
+    return validated;
+}
+
+/**
  * 1단계: 사용자의 질문을 SQL로 변환합니다.
  */
-async function generateSQL(question: string): Promise<string> {
-    const schemaPrompt = `
-당신은 SQLite 전문가입니다. 아래의 테이블 스키마를 바탕으로 사용자의 질문에 답할 수 있는 SQL 쿼리(SELECT)만 생성하세요.
+async function generateSQL(question: string, previousSQL?: string, previousError?: string, validatedEntities: string[] = []): Promise<string> {
+    const entityContext = validatedEntities.length > 0
+        ? `\n[참고: 질문과 관련된 포켓몬 이름 후보] ${validatedEntities.join(', ')}\n`
+        : '';
 
+    const errorFeedback = previousError ? `
+[이전 시도 실패]
+- 생성했던 SQL: ${previousSQL}
+- 에러 메시지: ${previousError}
+- 주의: 위 에러를 분석하여 올바른 SQLite 전용 SQL을 다시 생성하세요.
+` : '';
+
+    const schemaPrompt = `
+당신은 SQLite 전문가입니다. 아래의 테이블 스키마와 제공된 포켓몬 이름을 바탕으로 사용자의 질문에 답할 수 있는 SQL 쿼리(SELECT)만 생성하세요.
+${entityContext}${errorFeedback}
 [테이블 스키마 - 정확히 이 테이블과 컬럼만 존재합니다]
 1. pokemon (id, national_dex, name_ko, name_en, form_name, generation, image_url, is_default)
    - form_name: 리전폼 이름 (알로라, 가라르 등). 빈 문자열이면 기본 폼.
@@ -69,7 +136,7 @@ SQL:`;
 
     // 보안을 위해 SELECT 문인지 한 번 더 확인
     if (!sql.toUpperCase().startsWith('SELECT')) {
-        throw new Error('비정상적인 쿼리가 생성되었습니다.');
+        throw new Error('비정상적인 쿼리가 생성되었습니다. SELECT 쿼리만 가능합니다.');
     }
 
     return sql;
@@ -114,30 +181,55 @@ ${JSON.stringify(results, null, 2)}
  */
 export async function askPokemonWiki(question: string) {
     const db = getDatabase();
+    let currentSQL = '';
+    let lastError = '';
+    const MAX_RETRIES = 3;
 
     try {
-        // 1. SQL 생성
-        console.log(`[Ollama] SQL 생성 중: "${question}"`);
-        const sql = await generateSQL(question);
-        console.log(`[SQL] ${sql}`);
+        // 0. 엔티티 추출 및 검증
+        console.log(`[Ollama] 엔티티 추출 중: "${question}"`);
+        const extracted = await extractEntities(question);
+        const validated = await validateEntities(extracted);
+        console.log(`[Entities] 추출: [${extracted}], 검증됨: [${validated}]`);
 
-        // 2. DB 실행
-        const results = db.prepare(sql).all();
-        console.log(`[Result] ${results.length}건 조회됨`);
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                // 1. SQL 생성 (검증된 엔티티 전달)
+                console.log(`[Ollama] SQL 생성 중 (시도 ${attempt}/${MAX_RETRIES}): "${question}"`);
+                currentSQL = await generateSQL(question, currentSQL, lastError, validated);
+                console.log(`[SQL] ${currentSQL}`);
 
-        // 3. 답변 생성
-        console.log(`[Ollama] 답변 생성 중...`);
-        const answer = await generateAnswer(question, sql, results);
+                // 2. DB 실행
+                const results = db.prepare(currentSQL).all();
+                console.log(`[Result] ${results.length}건 조회됨`);
 
-        return {
-            answer,
-            sql,
-            results
-        };
+                // 3. 답변 생성
+                console.log(`[Ollama] 답변 생성 중...`);
+                const answer = await generateAnswer(question, currentSQL, results);
+
+                return {
+                    answer,
+                    sql: currentSQL,
+                    results
+                };
+            } catch (error: any) {
+                console.error(`[Attempt ${attempt}] LLM 처리 중 오류:`, error.message);
+                lastError = error.message;
+
+                if (attempt === MAX_RETRIES) {
+                    return {
+                        answer: `죄송합니다. ${MAX_RETRIES}번의 시도 끝에 질문을 분석하는 데 실패했습니다. (마지막 에러: ${error.message})`,
+                        sql: currentSQL,
+                        results: []
+                    };
+                }
+                console.log(`[Retry] 에러를 바탕으로 다시 시도합니다...`);
+            }
+        }
     } catch (error: any) {
-        console.error('LLM 처리 중 오류:', error);
+        console.error('엔티티 처리 중 오류:', error);
         return {
-            answer: "죄송합니다. 질문을 분석하는 중에 오류가 발생했습니다. (에러: " + error.message + ")",
+            answer: "질문을 분석하는 과정에서 오류가 발생했습니다.",
             sql: "",
             results: []
         };
@@ -149,29 +241,40 @@ export async function askPokemonWiki(question: string) {
  */
 export async function* askPokemonWikiStream(question: string) {
     const db = getDatabase();
+    let currentSQL = '';
+    let lastError = '';
+    const MAX_RETRIES = 3;
 
     try {
-        // 1. SQL 생성 (스트리밍 아님)
-        console.log(`[Ollama] SQL 생성 중: "${question}"`);
-        const sql = await generateSQL(question);
-        console.log(`[SQL] ${sql}`);
+        // 0. 엔티티 추출 및 검증
+        console.log(`[Ollama] 엔티티 추출 중: "${question}"`);
+        const extracted = await extractEntities(question);
+        const validated = await validateEntities(extracted);
+        console.log(`[Entities] 추출: [${extracted}], 검증됨: [${validated}]`);
 
-        // 2. DB 실행
-        const results = db.prepare(sql).all();
-        console.log(`[Result] ${results.length}건 조회됨`);
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                // 1. SQL 생성 (검증된 엔티티 전달)
+                console.log(`[Ollama] SQL 생성 중 (시도 ${attempt}/${MAX_RETRIES}): "${question}"`);
+                currentSQL = await generateSQL(question, currentSQL, lastError, validated);
+                console.log(`[SQL] ${currentSQL}`);
 
-        // SQL 정보 먼저 전송
-        yield { type: 'sql', content: sql };
+                // 2. DB 실행
+                const results = db.prepare(currentSQL).all();
+                console.log(`[Result] ${results.length}건 조회됨`);
 
-        // 3. 답변 스트리밍 생성
-        const answerPrompt = `
+                // SQL 정보 먼저 전송
+                yield { type: 'sql', content: currentSQL };
+
+                // 3. 답변 스트리밍 생성
+                const answerPrompt = `
 당신은 포켓몬 전문가입니다. 아래의 데이터베이스 조회 결과를 바탕으로 사용자의 질문에 친절하게 한국어로 답변해 주세요.
 
 [질문]
 ${question}
 
 [실행된 SQL]
-${sql}
+${currentSQL}
 
 [조회 결과]
 ${JSON.stringify(results, null, 2)}
@@ -183,21 +286,33 @@ ${JSON.stringify(results, null, 2)}
 - 답변은 한국어로, 핵심 위주로 작성하세요.
 `;
 
-        console.log(`[Ollama] 스트리밍 답변 생성 중...`);
-        const stream = await ollama.generate({
-            model: MODEL,
-            prompt: answerPrompt,
-            stream: true,
-        });
+                console.log(`[Ollama] 스트리밍 답변 생성 중...`);
+                const stream = await ollama.generate({
+                    model: MODEL,
+                    prompt: answerPrompt,
+                    stream: true,
+                });
 
-        for await (const chunk of stream) {
-            yield { type: 'answer', content: chunk.response };
+                for await (const chunk of stream) {
+                    yield { type: 'answer', content: chunk.response };
+                }
+
+                yield { type: 'done', content: '' };
+                return; // 성공 시 종료
+
+            } catch (error: any) {
+                console.error(`[Attempt ${attempt}] LLM 처리 중 오류:`, error.message);
+                lastError = error.message;
+
+                if (attempt === MAX_RETRIES) {
+                    yield { type: 'error', content: `최대 재시도 횟수를 초과했습니다. (에러: ${error.message})` };
+                    return;
+                }
+                console.log(`[Retry] 에러를 바탕으로 다시 시도합니다...`);
+            }
         }
-
-        yield { type: 'done', content: '' };
-
     } catch (error: any) {
-        console.error('LLM 처리 중 오류:', error);
-        yield { type: 'error', content: error.message };
+        console.error('엔티티 처리 중 오류:', error);
+        yield { type: 'error', content: "질문을 분석하는 과정에서 오류가 발생했습니다." };
     }
 }
