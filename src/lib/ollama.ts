@@ -1,28 +1,43 @@
 import { Ollama } from 'ollama';
 import { getDatabase } from './db';
+import {
+    ENTITY_EXTRACTION_PROMPT,
+    SQL_GENERATION_PROMPT,
+    ANSWER_GENERATION_PROMPT,
+    INTENT_CLASSIFICATION_PROMPT,
+    TYPE_MATCHUP_ANSWER_PROMPT
+} from './prompts';
+import { calculateWeaknesses, formatWeaknesses } from './typeMatchup';
+
+export type PokemonIntent = 'POKEMON_INFO' | 'POKEMON_COMPARE' | 'TYPE_MATCHUP' | 'RECOMMENDATION' | 'UNKNOWN';
 
 const ollama = new Ollama({ host: 'http://localhost:11434' });
 const MODEL = 'gemma3'; // 사용자님이 지정하신 모델 (gemma2 또는 gemma3)
 
 /**
+ * 질문의 의도(Intent)를 분류합니다.
+ */
+async function classifyQuestion(question: string): Promise<PokemonIntent> {
+    const prompt = INTENT_CLASSIFICATION_PROMPT(question);
+
+    const response = await ollama.generate({
+        model: MODEL,
+        prompt: prompt,
+        stream: false,
+        options: { temperature: 0 }
+    });
+
+    const intent = response.response.trim() as PokemonIntent;
+    const validIntents: PokemonIntent[] = ['POKEMON_INFO', 'POKEMON_COMPARE', 'TYPE_MATCHUP', 'RECOMMENDATION', 'UNKNOWN'];
+
+    return validIntents.includes(intent) ? intent : 'UNKNOWN';
+}
+
+/**
  * 0단계 A: 질문에서 포켓몬 이름 후보를 추출합니다.
  */
 async function extractEntities(question: string): Promise<string[]> {
-    const prompt = `
-당신은 포켓몬 언어 모델입니다. 사용자의 질문에서 포켓몬의 이름(또는 이름의 일부)만 추출하여 쉼표(,)로 구분된 목록으로 출력하세요.
-포켓몬 이름이 아닌 단어는 무시하세요.
-
-질문: "피카츄와 파이리의 공격력을 비교해줘"
-추출: 피카츄, 파이리
-
-질문: "갸라도스 타입의 약점이 뭐야?"
-추출: 갸라도스
-
-질문: "알로라 식스테일의 특성이 뭐야?"
-추출: 식스테일, 알로라
-
-질문: "${question}"
-추출:`;
+    const prompt = ENTITY_EXTRACTION_PROMPT(question);
 
     const response = await ollama.generate({
         model: MODEL,
@@ -63,7 +78,7 @@ async function validateEntities(entities: string[]): Promise<string[]> {
 /**
  * 1단계: 사용자의 질문을 SQL로 변환합니다.
  */
-async function generateSQL(question: string, previousSQL?: string, previousError?: string, validatedEntities: string[] = []): Promise<string> {
+async function generateSQL(question: string, previousSQL?: string, previousError?: string, validatedEntities: string[] = [], intent: string = 'UNKNOWN'): Promise<string> {
     const entityContext = validatedEntities.length > 0
         ? `\n[참고: 질문과 관련된 포켓몬 이름 후보] ${validatedEntities.join(', ')}\n`
         : '';
@@ -75,51 +90,7 @@ async function generateSQL(question: string, previousSQL?: string, previousError
 - 주의: 위 에러를 분석하여 올바른 SQLite 전용 SQL을 다시 생성하세요.
 ` : '';
 
-    const schemaPrompt = `
-당신은 SQLite 전문가입니다. 아래의 테이블 스키마와 제공된 포켓몬 이름을 바탕으로 사용자의 질문에 답할 수 있는 SQL 쿼리(SELECT)만 생성하세요.
-${entityContext}${errorFeedback}
-[테이블 스키마 - 정확히 이 테이블과 컬럼만 존재합니다]
-1. pokemon (id, national_dex, name_ko, name_en, form_name, generation, image_url, is_default)
-   - form_name: 리전폼 이름 (알로라, 가라르 등). 빈 문자열이면 기본 폼.
-2. types (id, name_ko, name_en)
-3. pokemon_types (pokemon_id, type_id, slot)
-4. stats (pokemon_id, hp, attack, defense, sp_attack, sp_defense, speed, total) - 포켓몬 능력치/종족값 정보
-5. moves (id, name_ko, name_en, type_id, power, accuracy, pp, damage_class)
-6. pokemon_moves (pokemon_id, move_id, learn_method, level_learned)
-7. evolutions (from_pokemon_id, to_pokemon_id, trigger, min_level, item, condition)
-8. abilities (id, name_ko, name_en, description) - 포켓몬 특성 정보
-9. pokemon_abilities (pokemon_id, ability_id, is_hidden, slot) - 포켓몬이 가진 특성 연결
-
-[예시 쿼리]
--- 포켓몬 타입 조회 (폼별로 구분):
-SELECT p.name_ko, p.form_name, GROUP_CONCAT(t.name_ko) AS types
-FROM pokemon p
-JOIN pokemon_types pt ON p.id = pt.pokemon_id
-JOIN types t ON pt.type_id = t.id
-WHERE p.name_ko = '식스테일'
-GROUP BY p.id, p.form_name;
-
--- 스피드 가장 높은 포켓몬:
-SELECT p.name_ko, p.form_name, s.speed
-FROM pokemon p
-JOIN stats s ON p.id = s.pokemon_id
-ORDER BY s.speed DESC LIMIT 1;
-
--- 포켓몬 특성 조회 (is_hidden=1이면 숨겨진 특성):
-SELECT p.name_ko, p.form_name, a.name_ko AS ability_name, pa.is_hidden
-FROM pokemon p
-JOIN pokemon_abilities pa ON p.id = pa.pokemon_id
-JOIN abilities a ON pa.ability_id = a.id
-WHERE p.name_ko = '번치코';
-
-[주의사항]
-- SELECT 쿼리만 출력. 설명/주석 금지.
-- 위에 명시된 테이블만 사용하세요. forms 같은 테이블은 존재하지 않습니다.
-- "특성"을 물어보면 abilities 테이블을 사용하세요. stats(능력치)와 혼동하지 마세요.
-- 별칭(alias)을 쓸 때 FROM/JOIN에서 정의한 별칭만 SELECT에서 사용하세요.
-
-질문: "${question}"
-SQL:`;
+    const schemaPrompt = SQL_GENERATION_PROMPT(question, entityContext, errorFeedback, intent);
 
     const response = await ollama.generate({
         model: MODEL,
@@ -146,26 +117,7 @@ SQL:`;
  * 2단계: 실행 결과와 질문을 바탕으로 답변을 생성합니다.
  */
 async function generateAnswer(question: string, sql: string, results: any[]): Promise<string> {
-    const answerPrompt = `
-당신은 포켓몬 전문가입니다. 아래의 데이터베이스 조회 결과를 바탕으로 사용자의 질문에 친절하게 한국어로 답변해 주세요.
-
-[질문]
-${question}
-
-[실행된 SQL]
-${sql}
-
-[조회 결과]
-${JSON.stringify(results, null, 2)}
-
-[답변 가이드]
-- 질문에 대한 **정확한 팩트**만 간결하게 답변하세요.
-- **리전 폼 구분 필수**: 조회 결과에 form_name이 다른 행이 여러 개 있으면, 반드시 각 폼을 구분하여 설명하세요.
-  - 예: "질문: 질뻐기의 타입이 뭐야? / 답변: 일반 질뻐기는 독 타입이고, 알로라 질뻐기는 독/악 타입입니다."
-  - form_name이 비어있으면 "일반" 또는 "기본 폼"으로 표현하세요.
-- 타입 상성은 확실하지 않으면 언급하지 마세요.
-- 답변은 한국어로, 핵심 위주로 작성하세요.
-`;
+    const answerPrompt = ANSWER_GENERATION_PROMPT(question, sql, results);
 
     const response = await ollama.generate({
         model: MODEL,
@@ -186,7 +138,127 @@ export async function askPokemonWiki(question: string) {
     const MAX_RETRIES = 3;
 
     try {
-        // 0. 엔티티 추출 및 검증
+        // 0-1. 의도 분류
+        console.log(`[Ollama] 의도 분류 중: "${question}"`);
+        const intent = await classifyQuestion(question);
+        console.log(`[Intent] ${intent}`);
+
+        // 추천인 경우 별도 처리 (현재는 간단한 메시지 또는 placeholder)
+        if (intent === 'RECOMMENDATION') {
+            return {
+                answer: "추천 기능은 현재 고도화 작업 중입니다. 곧 더 똑똑한 포켓몬 추천을 받아보실 수 있어요!",
+                sql: "",
+                results: [],
+                intent
+            };
+        }
+
+        if (intent === 'UNKNOWN') {
+            return {
+                answer: "죄송합니다. 포켓몬과 관련이 없거나 제가 현재 답변드리기 어려운 질문입니다.",
+                sql: "",
+                results: [],
+                intent
+            };
+        }
+
+        // TYPE_MATCHUP 처리
+        if (intent === 'TYPE_MATCHUP') {
+            console.log(`[Ollama] 타입 상성 계산 중: "${question}"`);
+
+            // 엔티티 추출 및 검증
+            const extracted = await extractEntities(question);
+            const validated = await validateEntities(extracted);
+
+            if (validated.length === 0) {
+                return {
+                    answer: "포켓몬 이름을 찾을 수 없습니다. 정확한 포켓몬 이름을 입력해주세요.",
+                    sql: "",
+                    results: [],
+                    intent
+                };
+            }
+
+            // 첫 번째 포켓몬의 타입 조회
+            const pokemonName = validated[0];
+            const typeQuery = `
+                SELECT p.name_ko, p.form_name, GROUP_CONCAT(t.name_ko) AS types
+                FROM pokemon p
+                JOIN pokemon_types pt ON p.id = pt.pokemon_id
+                JOIN types t ON pt.type_id = t.id
+                WHERE p.name_ko = ?
+                GROUP BY p.id, p.form_name
+            `;
+
+            const typeResults = db.prepare(typeQuery).all(pokemonName) as Array<{
+                name_ko: string;
+                form_name: string;
+                types: string;
+            }>;
+
+            if (typeResults.length === 0) {
+                return {
+                    answer: `${pokemonName}의 정보를 찾을 수 없습니다.`,
+                    sql: typeQuery,
+                    results: [],
+                    intent
+                };
+            }
+
+            // 각 폼별로 상성 계산
+            const answers: string[] = [];
+
+
+            for (const result of typeResults) {
+                const types = result.types.split(',');
+                const multipliers = calculateWeaknesses(types);
+                const formatted = formatWeaknesses(multipliers);
+
+                // 데이터를 코드가 직접 조립 (할루시네이션 방지)
+                const formName = result.form_name ? `${result.form_name} ` : '';
+                const fullName = `${formName}${result.name_ko}`;
+
+                let summary = `${fullName}의 타입은 ${types.join('/')}입니다.\n\n`;
+
+                if (formatted.x4_weakness.length > 0) {
+                    summary += `⚠️ **4배 데미지 (치명적 약점)**: ${formatted.x4_weakness.join(', ')}\n`;
+                } else {
+                    summary += `• 4배 데미지 약점: 없음\n`;
+                }
+
+                summary += `• 2배 데미지 (주요 약점): ${formatted.x2_weakness.join(', ') || '없음'}\n`;
+
+                const resistances = [...formatted.x0_5_resistance, ...formatted.x0_25_resistance];
+                summary += `• 저항 (데미지 반감): ${resistances.join(', ') || '없음'}\n`;
+
+                if (formatted.x0_immunity.length > 0) {
+                    summary += `• 효과 없음 (0배 데미지): ${formatted.x0_immunity.join(', ')}\n`;
+                }
+
+                const matchupPrompt = TYPE_MATCHUP_ANSWER_PROMPT(
+                    fullName,
+                    types,
+                    summary
+                );
+
+                const response = await ollama.generate({
+                    model: MODEL,
+                    prompt: matchupPrompt,
+                    stream: false,
+                });
+
+                answers.push(response.response);
+            }
+
+            return {
+                answer: answers.join('\n\n'),
+                sql: typeQuery,
+                results: typeResults,
+                intent
+            };
+        }
+
+        // 0-2. 엔티티 추출 및 검증
         console.log(`[Ollama] 엔티티 추출 중: "${question}"`);
         const extracted = await extractEntities(question);
         const validated = await validateEntities(extracted);
@@ -196,7 +268,7 @@ export async function askPokemonWiki(question: string) {
             try {
                 // 1. SQL 생성 (검증된 엔티티 전달)
                 console.log(`[Ollama] SQL 생성 중 (시도 ${attempt}/${MAX_RETRIES}): "${question}"`);
-                currentSQL = await generateSQL(question, currentSQL, lastError, validated);
+                currentSQL = await generateSQL(question, currentSQL, lastError, validated, intent);
                 console.log(`[SQL] ${currentSQL}`);
 
                 // 2. DB 실행
@@ -210,7 +282,8 @@ export async function askPokemonWiki(question: string) {
                 return {
                     answer,
                     sql: currentSQL,
-                    results
+                    results,
+                    intent
                 };
             } catch (error: any) {
                 console.error(`[Attempt ${attempt}] LLM 처리 중 오류:`, error.message);
@@ -220,14 +293,15 @@ export async function askPokemonWiki(question: string) {
                     return {
                         answer: `죄송합니다. ${MAX_RETRIES}번의 시도 끝에 질문을 분석하는 데 실패했습니다. (마지막 에러: ${error.message})`,
                         sql: currentSQL,
-                        results: []
+                        results: [],
+                        intent
                     };
                 }
                 console.log(`[Retry] 에러를 바탕으로 다시 시도합니다...`);
             }
         }
     } catch (error: any) {
-        console.error('엔티티 처리 중 오류:', error);
+        console.error('LLM 처리 과정 중 오류:', error);
         return {
             answer: "질문을 분석하는 과정에서 오류가 발생했습니다.",
             sql: "",
@@ -246,7 +320,114 @@ export async function* askPokemonWikiStream(question: string) {
     const MAX_RETRIES = 3;
 
     try {
-        // 0. 엔티티 추출 및 검증
+        // 0-1. 의도 분류
+        console.log(`[Ollama] 의도 분류 중: "${question}"`);
+        const intent = await classifyQuestion(question);
+        console.log(`[Intent] ${intent}`);
+
+        yield { type: 'intent', content: intent };
+
+        if (intent === 'RECOMMENDATION') {
+            yield { type: 'answer', content: "추천 기능은 현재 고도화 작업 중입니다. 곧 더 똑똑한 포켓몬 추천을 받아보실 수 있어요!" };
+            yield { type: 'done', content: '' };
+            return;
+        }
+
+        if (intent === 'UNKNOWN') {
+            yield { type: 'answer', content: "죄송합니다. 포켓몬과 관련이 없거나 제가 현재 답변드리기 어려운 질문입니다." };
+            yield { type: 'done', content: '' };
+            return;
+        }
+
+        // TYPE_MATCHUP 처리
+        if (intent === 'TYPE_MATCHUP') {
+            console.log(`[Ollama] 타입 상성 계산 중 (스트리밍): "${question}"`);
+
+            const extracted = await extractEntities(question);
+            const validated = await validateEntities(extracted);
+
+            if (validated.length === 0) {
+                yield { type: 'answer', content: "포켓몬 이름을 찾을 수 없습니다. 정확한 포켓몬 이름을 입력해주세요." };
+                yield { type: 'done', content: '' };
+                return;
+            }
+
+            const pokemonName = validated[0];
+            const typeQuery = `
+                SELECT p.name_ko, p.form_name, GROUP_CONCAT(t.name_ko) AS types
+                FROM pokemon p
+                JOIN pokemon_types pt ON p.id = pt.pokemon_id
+                JOIN types t ON pt.type_id = t.id
+                WHERE p.name_ko = ?
+                GROUP BY p.id, p.form_name
+            `;
+
+            const typeResults = db.prepare(typeQuery).all(pokemonName) as Array<{
+                name_ko: string;
+                form_name: string;
+                types: string;
+            }>;
+
+            if (typeResults.length === 0) {
+                yield { type: 'answer', content: `${pokemonName}의 정보를 찾을 수 없습니다.` };
+                yield { type: 'done', content: '' };
+                return;
+            }
+
+            yield { type: 'sql', content: typeQuery };
+
+            for (const result of typeResults) {
+                const types = result.types.split(',');
+                const multipliers = calculateWeaknesses(types);
+                const formatted = formatWeaknesses(multipliers);
+
+                // 데이터를 코드가 직접 조립 (할루시네이션 방지)
+                const formName = result.form_name ? `${result.form_name} ` : '';
+                const fullName = `${formName}${result.name_ko}`;
+
+                let summary = `${fullName}의 타입은 ${types.join('/')}입니다.\n\n`;
+
+                if (formatted.x4_weakness.length > 0) {
+                    summary += `⚠️ **4배 데미지 (치명적 약점)**: ${formatted.x4_weakness.join(', ')}\n`;
+                } else {
+                    summary += `• 4배 데미지 약점: 없음\n`;
+                }
+
+                summary += `• 2배 데미지 (주요 약점): ${formatted.x2_weakness.join(', ') || '없음'}\n`;
+
+                const resistances = [...formatted.x0_5_resistance, ...formatted.x0_25_resistance];
+                summary += `• 저항 (데미지 반감): ${resistances.join(', ') || '없음'}\n`;
+
+                if (formatted.x0_immunity.length > 0) {
+                    summary += `• 효과 없음 (0배 데미지): ${formatted.x0_immunity.join(', ')}\n`;
+                }
+
+                const matchupPrompt = TYPE_MATCHUP_ANSWER_PROMPT(
+                    fullName,
+                    types,
+                    summary
+                );
+
+                const stream = await ollama.generate({
+                    model: MODEL,
+                    prompt: matchupPrompt,
+                    stream: true,
+                });
+
+                for await (const chunk of stream) {
+                    yield { type: 'answer', content: chunk.response };
+                }
+
+                if (typeResults.length > 1) {
+                    yield { type: 'answer', content: '\n\n' };
+                }
+            }
+
+            yield { type: 'done', content: '' };
+            return;
+        }
+
+        // 0-2. 엔티티 추출 및 검증
         console.log(`[Ollama] 엔티티 추출 중: "${question}"`);
         const extracted = await extractEntities(question);
         const validated = await validateEntities(extracted);
@@ -256,35 +437,18 @@ export async function* askPokemonWikiStream(question: string) {
             try {
                 // 1. SQL 생성 (검증된 엔티티 전달)
                 console.log(`[Ollama] SQL 생성 중 (시도 ${attempt}/${MAX_RETRIES}): "${question}"`);
-                currentSQL = await generateSQL(question, currentSQL, lastError, validated);
+                currentSQL = await generateSQL(question, currentSQL, lastError, validated, intent);
                 console.log(`[SQL] ${currentSQL}`);
 
                 // 2. DB 실행
                 const results = db.prepare(currentSQL).all();
                 console.log(`[Result] ${results.length}건 조회됨`);
 
-                // SQL 정보 먼저 전송
+                // SQL 정보 전송
                 yield { type: 'sql', content: currentSQL };
 
                 // 3. 답변 스트리밍 생성
-                const answerPrompt = `
-당신은 포켓몬 전문가입니다. 아래의 데이터베이스 조회 결과를 바탕으로 사용자의 질문에 친절하게 한국어로 답변해 주세요.
-
-[질문]
-${question}
-
-[실행된 SQL]
-${currentSQL}
-
-[조회 결과]
-${JSON.stringify(results, null, 2)}
-
-[답변 가이드]
-- 질문에 대한 **정확한 팩트**만 간결하게 답변하세요.
-- **리전 폼 구분 필수**: 조회 결과에 form_name이 다른 행이 여러 개 있으면, 반드시 각 폼을 구분하여 설명하세요.
-- form_name이 비어있으면 "일반" 또는 "기본 폼"으로 표현하세요.
-- 답변은 한국어로, 핵심 위주로 작성하세요.
-`;
+                const answerPrompt = ANSWER_GENERATION_PROMPT(question, currentSQL, results);
 
                 console.log(`[Ollama] 스트리밍 답변 생성 중...`);
                 const stream = await ollama.generate({
@@ -312,7 +476,7 @@ ${JSON.stringify(results, null, 2)}
             }
         }
     } catch (error: any) {
-        console.error('엔티티 처리 중 오류:', error);
+        console.error('LLM 처리 과정 중 오류:', error);
         yield { type: 'error', content: "질문을 분석하는 과정에서 오류가 발생했습니다." };
     }
 }

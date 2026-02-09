@@ -1,0 +1,257 @@
+{
+    "defense_effectiveness": {
+        "노말": {
+            "Weaknesses": [
+                "격투"
+            ],
+            "Resistances": [],
+            "Immunities": [
+                "고스트"
+            ]
+        },
+        "불꽃": {
+            "Weaknesses": [
+                "물",
+                "땅",
+                "바위"
+            ],
+            "Resistances": [
+                "불꽃",
+                "풀",
+                "얼음",
+                "벌레",
+                "강철",
+                "페어리"
+            ],
+            "Immunities": []
+        },
+        "물": {
+            "Weaknesses": [
+                "풀",
+                "전기"
+            ],
+            "Resistances": [
+                "불꽃",
+                "물",
+                "얼음",
+                "강철"
+            ],
+            "Immunities": []
+        },
+        "풀": {
+            "Weaknesses": [
+                "불꽃",
+                "얼음",
+                "독",
+                "비행",
+                "벌레"
+            ],
+            "Resistances": [
+                "물",
+                "풀",
+                "전기",
+                "땅"
+            ],
+            "Immunities": []
+        },
+        "전기": {
+            "Weaknesses": [
+                "땅"
+            ],
+            "Resistances": [
+                "전기",
+                "비행",
+                "강철"
+            ],
+            "Immunities": []
+        },
+        "얼음": {
+            "Weaknesses": [
+                "불꽃",
+                "격투",
+                "바위",
+                "강철"
+            ],
+            "Resistances": [
+                "얼음"
+            ],
+            "Immunities": []
+        },
+        "격투": {
+            "Weaknesses": [
+                "비행",
+                "에스퍼",
+                "페어리"
+            ],
+            "Resistances": [
+                "벌레",
+                "바위",
+                "악"
+            ],
+            "Immunities": []
+        },
+        "독": {
+            "Weaknesses": [
+                "땅",
+                "에스퍼"
+            ],
+            "Resistances": [
+                "풀",
+                "격투",
+                "독",
+                "벌레",
+                "페어리"
+            ],
+            "Immunities": []
+        },
+        "땅": {
+            "Weaknesses": [
+                "물",
+                "풀",
+                "얼음"
+            ],
+            "Resistances": [
+                "독",
+                "바위"
+            ],
+            "Immunities": [
+                "전기"
+            ]
+        },
+        "비행": {
+            "Weaknesses": [
+                "전기",
+                "얼음",
+                "바위"
+            ],
+            "Resistances": [
+                "풀",
+                "격투",
+                "벌레"
+            ],
+            "Immunities": [
+                "땅"
+            ]
+        },
+        "에스퍼": {
+            "Weaknesses": [
+                "벌레",
+                "고스트",
+                "악"
+            ],
+            "Resistances": [
+                "격투",
+                "에스퍼"
+            ],
+            "Immunities": []
+        },
+        "벌레": {
+            "Weaknesses": [
+                "불꽃",
+                "독",
+                "비행",
+                "바위"
+            ],
+            "Resistances": [
+                "풀",
+                "격투",
+                "땅"
+            ],
+            "Immunities": []
+        },
+        "바위": {
+            "Weaknesses": [
+                "물",
+                "풀",
+                "격투",
+                "땅",
+                "강철"
+            ],
+            "Resistances": [
+                "노말",
+                "불꽃",
+                "독",
+                "비행"
+            ],
+            "Immunities": []
+        },
+        "고스트": {
+            "Weaknesses": [
+                "고스트",
+                "악"
+            ],
+            "Resistances": [
+                "독",
+                "벌레"
+            ],
+            "Immunities": [
+                "노말",
+                "격투"
+            ]
+        },
+        "드래곤": {
+            "Weaknesses": [
+                "얼음",
+                "드래곤",
+                "페어리"
+            ],
+            "Resistances": [
+                "불꽃",
+                "물",
+                "풀",
+                "전기"
+            ],
+            "Immunities": []
+        },
+        "악": {
+            "Weaknesses": [
+                "격투",
+                "벌레",
+                "페어리"
+            ],
+            "Resistances": [
+                "고스트",
+                "악"
+            ],
+            "Immunities": [
+                "에스퍼"
+            ]
+        },
+        "강철": {
+            "Weaknesses": [
+                "불꽃",
+                "격투",
+                "땅"
+            ],
+            "Resistances": [
+                "노말",
+                "풀",
+                "얼음",
+                "비행",
+                "에스퍼",
+                "벌레",
+                "바위",
+                "드래곤",
+                "강철",
+                "페어리"
+            ],
+            "Immunities": [
+                "독"
+            ]
+        },
+        "페어리": {
+            "Weaknesses": [
+                "독",
+                "강철"
+            ],
+            "Resistances": [
+                "격투",
+                "벌레",
+                "악"
+            ],
+            "Immunities": [
+                "드래곤"
+            ]
+        }
+    }
+}
