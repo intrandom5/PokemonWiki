@@ -74,6 +74,7 @@ export default function Home() {
 
   // 검색 상태
   const [searchQuery, setSearchQuery] = useState("");
+  const [nameSearch, setNameSearch] = useState("");
   const [chatAnswer, setChatAnswer] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
 
@@ -98,6 +99,10 @@ export default function Home() {
         params.append("type", type);
       });
 
+      if (nameSearch) {
+        params.set("name", nameSearch);
+      }
+
       const res = await fetch(`/api/pokemon?${params.toString()}`);
       const data = await res.json();
 
@@ -108,11 +113,11 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [page, selectedGenerations, selectedTypes]);
+  }, [page, selectedGenerations, selectedTypes, nameSearch]);
 
   useEffect(() => {
     loadPokemon();
-  }, [loadPokemon, selectedGenerations, selectedTypes]);
+  }, [loadPokemon, selectedGenerations, selectedTypes, nameSearch]);
 
   // 필터 변경 시 페이지 리셋 (토글 방식 배열 관리)
   const handleGenerationChange = (gen: number | null) => {
@@ -254,6 +259,25 @@ export default function Home() {
             </p>
           </div>
         )}
+      </section>
+
+      {/* 포켓몬 이름 직접 검색 */}
+      <section className="max-w-2xl mx-auto px-4 mb-12">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={nameSearch}
+            onChange={(e) => setNameSearch(e.target.value)}
+            placeholder="포켓몬 이름으로 찾기 (예: 망나뇽, Mewtwo)"
+            className="flex-1 px-5 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/50 transition-all font-medium"
+          />
+          <button
+            className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-xl transition-all"
+            onClick={() => setPage(1)}
+          >
+            찾기
+          </button>
+        </div>
       </section>
 
       {/* 필터 섹션 */}
@@ -720,7 +744,7 @@ export default function Home() {
                               <span>💧 PP: <span className="text-slate-200">{move.pp || '-'}</span></span>
                               <span className="col-span-2">
                                 💥 분류: <span className={`${move.damage_class === 'physical' ? 'text-orange-400' :
-                                    move.damage_class === 'special' ? 'text-blue-400' : 'text-slate-400'
+                                  move.damage_class === 'special' ? 'text-blue-400' : 'text-slate-400'
                                   }`}>
                                   {move.damage_class === 'physical' ? '물리' :
                                     move.damage_class === 'special' ? '특수' : '변화'}

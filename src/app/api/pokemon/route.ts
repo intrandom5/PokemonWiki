@@ -8,11 +8,12 @@ export async function GET(request: NextRequest) {
     // 쿼리 파라미터
     const generations = searchParams.getAll('generation'); // 다중 세대 필터
     const types = searchParams.getAll('type'); // 복수 타입 필터
+    const name = searchParams.get('name') || ''; // 이름 검색
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '30');
     const offset = (page - 1) * limit;
 
-    console.log('[API] 요청 파라미터:', { generations, types, page, limit });
+    console.log('[API] 요청 파라미터:', { generations, types, name, page, limit });
 
     try {
         let query = `
@@ -51,6 +52,12 @@ export async function GET(request: NextRequest) {
                 HAVING COUNT(DISTINCT t2.id) = ?
             )`);
             params.push(...types, types.length);
+        }
+
+        // 이름 검색 (한글 또는 영어)
+        if (name) {
+            conditions.push(`(p.name_ko LIKE ? OR p.name_en LIKE ?)`);
+            params.push(`%${name}%`, `%${name}%`);
         }
 
         if (conditions.length > 0) {
