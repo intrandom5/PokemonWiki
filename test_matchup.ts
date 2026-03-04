@@ -1,4 +1,4 @@
-import { askPokemonWiki } from './src/lib/ollama';
+import { askPokemonWiki } from './src/lib/llm';
 
 async function testTypeMatchup() {
     const testCases = [

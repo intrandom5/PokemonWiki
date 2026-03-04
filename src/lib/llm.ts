@@ -1,4 +1,3 @@
-import { Ollama } from 'ollama';
 import { getDatabase } from './db';
 import {
     ENTITY_EXTRACTION_PROMPT,
@@ -11,23 +10,66 @@ import { calculateWeaknesses, formatWeaknesses } from './typeMatchup';
 
 export type PokemonIntent = 'POKEMON_INFO' | 'POKEMON_COMPARE' | 'TYPE_MATCHUP' | 'RECOMMENDATION' | 'UNKNOWN';
 
-const ollama = new Ollama({ host: 'http://localhost:11434' });
-const MODEL = 'gemma3'; // 사용자님이 지정하신 모델 (gemma2 또는 gemma3)
+type StreamChunk = {
+    type: 'intent' | 'sql' | 'answer' | 'done' | 'error';
+    content: string;
+};
+
+const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+
+function ensureApiKey() {
+    if (!process.env.OPENAI_API_KEY) {
+        throw new Error('OPENAI_API_KEY가 설정되지 않았습니다.');
+    }
+}
+
+type ChatCompletionResponse = {
+    choices?: Array<{
+        message?: {
+            content?: string;
+        };
+    }>;
+};
+
+async function callOpenAI(prompt: string, temperature = 0, stream = false): Promise<Response> {
+    ensureApiKey();
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+            model: MODEL,
+            messages: [{ role: 'user', content: prompt }],
+            temperature,
+            stream,
+        }),
+    });
+
+    if (!response.ok) {
+        const detail = await response.text().catch(() => '');
+        throw new Error(`OpenAI API 오류 (${response.status}): ${detail}`);
+    }
+
+    return response;
+}
+
+async function generateText(prompt: string, temperature = 0): Promise<string> {
+    const response = await callOpenAI(prompt, temperature, false);
+    const data = await response.json() as ChatCompletionResponse;
+    return data.choices?.[0]?.message?.content?.trim() ?? '';
+}
 
 /**
  * 질문의 의도(Intent)를 분류합니다.
  */
 async function classifyQuestion(question: string): Promise<PokemonIntent> {
     const prompt = INTENT_CLASSIFICATION_PROMPT(question);
+    const text = await generateText(prompt, 0);
 
-    const response = await ollama.generate({
-        model: MODEL,
-        prompt: prompt,
-        stream: false,
-        options: { temperature: 0 }
-    });
-
-    const intent = response.response.trim() as PokemonIntent;
+    const intent = text.trim() as PokemonIntent;
     const validIntents: PokemonIntent[] = ['POKEMON_INFO', 'POKEMON_COMPARE', 'TYPE_MATCHUP', 'RECOMMENDATION', 'UNKNOWN'];
 
     return validIntents.includes(intent) ? intent : 'UNKNOWN';
@@ -38,15 +80,9 @@ async function classifyQuestion(question: string): Promise<PokemonIntent> {
  */
 async function extractEntities(question: string): Promise<string[]> {
     const prompt = ENTITY_EXTRACTION_PROMPT(question);
+    const text = await generateText(prompt, 0);
 
-    const response = await ollama.generate({
-        model: MODEL,
-        prompt: prompt,
-        stream: false,
-        options: { temperature: 0 }
-    });
-
-    return response.response.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    return text.split(',').map(s => s.trim()).filter(s => s.length > 0);
 }
 
 /**
@@ -91,18 +127,9 @@ async function generateSQL(question: string, previousSQL?: string, previousError
 ` : '';
 
     const schemaPrompt = SQL_GENERATION_PROMPT(question, entityContext, errorFeedback, intent);
-
-    const response = await ollama.generate({
-        model: MODEL,
-        prompt: schemaPrompt,
-        stream: false,
-        options: {
-            temperature: 0, // SQL 생성이므로 정확도를 위해 0으로 설정
-        }
-    });
+    let sql = await generateText(schemaPrompt, 0);
 
     // 응답에서 SQL 쿼리만 추출 (코드 블록 등이 있을 수 있음)
-    let sql = response.response.trim();
     sql = sql.replace(/```sql|```/g, '').trim();
 
     // 보안을 위해 SELECT 문인지 한 번 더 확인
@@ -118,14 +145,47 @@ async function generateSQL(question: string, previousSQL?: string, previousError
  */
 async function generateAnswer(question: string, sql: string, results: any[]): Promise<string> {
     const answerPrompt = ANSWER_GENERATION_PROMPT(question, sql, results);
+    return generateText(answerPrompt, 0.3);
+}
 
-    const response = await ollama.generate({
-        model: MODEL,
-        prompt: answerPrompt,
-        stream: false,
-    });
+async function* streamGeneratedAnswer(prompt: string): AsyncGenerator<string> {
+    const response = await callOpenAI(prompt, 0.3, true);
+    if (!response.body) return;
 
-    return response.response;
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        for (const rawLine of lines) {
+            const line = rawLine.trim();
+            if (!line.startsWith('data:')) continue;
+
+            const data = line.slice(5).trim();
+            if (!data || data === '[DONE]') continue;
+
+            try {
+                const json = JSON.parse(data) as {
+                    choices?: Array<{
+                        delta?: { content?: string };
+                    }>;
+                };
+                const delta = json.choices?.[0]?.delta?.content;
+                if (delta) {
+                    yield delta;
+                }
+            } catch {
+                // 부분 청크 파싱 실패는 무시하고 다음 라인 처리
+            }
+        }
+    }
 }
 
 /**
@@ -139,7 +199,7 @@ export async function askPokemonWiki(question: string) {
 
     try {
         // 0-1. 의도 분류
-        console.log(`[Ollama] 의도 분류 중: "${question}"`);
+        console.log(`[OpenAI] 의도 분류 중: "${question}"`);
         const intent = await classifyQuestion(question);
         console.log(`[Intent] ${intent}`);
 
@@ -164,7 +224,7 @@ export async function askPokemonWiki(question: string) {
 
         // TYPE_MATCHUP 처리
         if (intent === 'TYPE_MATCHUP') {
-            console.log(`[Ollama] 타입 상성 계산 중: "${question}"`);
+            console.log(`[OpenAI] 타입 상성 계산 중: "${question}"`);
 
             // 엔티티 추출 및 검증
             const extracted = await extractEntities(question);
@@ -208,7 +268,6 @@ export async function askPokemonWiki(question: string) {
             // 각 폼별로 상성 계산
             const answers: string[] = [];
 
-
             for (const result of typeResults) {
                 const types = result.types.split(',');
                 const multipliers = calculateWeaknesses(types);
@@ -241,13 +300,8 @@ export async function askPokemonWiki(question: string) {
                     summary
                 );
 
-                const response = await ollama.generate({
-                    model: MODEL,
-                    prompt: matchupPrompt,
-                    stream: false,
-                });
-
-                answers.push(response.response);
+                const response = await generateText(matchupPrompt, 0.3);
+                answers.push(response);
             }
 
             return {
@@ -259,7 +313,7 @@ export async function askPokemonWiki(question: string) {
         }
 
         // 0-2. 엔티티 추출 및 검증
-        console.log(`[Ollama] 엔티티 추출 중: "${question}"`);
+        console.log(`[OpenAI] 엔티티 추출 중: "${question}"`);
         const extracted = await extractEntities(question);
         const validated = await validateEntities(extracted);
         console.log(`[Entities] 추출: [${extracted}], 검증됨: [${validated}]`);
@@ -267,7 +321,7 @@ export async function askPokemonWiki(question: string) {
         for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
             try {
                 // 1. SQL 생성 (검증된 엔티티 전달)
-                console.log(`[Ollama] SQL 생성 중 (시도 ${attempt}/${MAX_RETRIES}): "${question}"`);
+                console.log(`[OpenAI] SQL 생성 중 (시도 ${attempt}/${MAX_RETRIES}): "${question}"`);
                 currentSQL = await generateSQL(question, currentSQL, lastError, validated, intent);
                 console.log(`[SQL] ${currentSQL}`);
 
@@ -276,7 +330,7 @@ export async function askPokemonWiki(question: string) {
                 console.log(`[Result] ${results.length}건 조회됨`);
 
                 // 3. 답변 생성
-                console.log(`[Ollama] 답변 생성 중...`);
+                console.log(`[OpenAI] 답변 생성 중...`);
                 const answer = await generateAnswer(question, currentSQL, results);
 
                 return {
@@ -300,6 +354,12 @@ export async function askPokemonWiki(question: string) {
                 console.log(`[Retry] 에러를 바탕으로 다시 시도합니다...`);
             }
         }
+
+        return {
+            answer: "질문을 분석하는 과정에서 응답을 생성하지 못했습니다.",
+            sql: currentSQL,
+            results: []
+        };
     } catch (error: any) {
         console.error('LLM 처리 과정 중 오류:', error);
         return {
@@ -313,7 +373,7 @@ export async function askPokemonWiki(question: string) {
 /**
  * 스트리밍 버전: 답변을 실시간으로 생성합니다.
  */
-export async function* askPokemonWikiStream(question: string) {
+export async function* askPokemonWikiStream(question: string): AsyncGenerator<StreamChunk> {
     const db = getDatabase();
     let currentSQL = '';
     let lastError = '';
@@ -321,7 +381,7 @@ export async function* askPokemonWikiStream(question: string) {
 
     try {
         // 0-1. 의도 분류
-        console.log(`[Ollama] 의도 분류 중: "${question}"`);
+        console.log(`[OpenAI] 의도 분류 중: "${question}"`);
         const intent = await classifyQuestion(question);
         console.log(`[Intent] ${intent}`);
 
@@ -341,7 +401,7 @@ export async function* askPokemonWikiStream(question: string) {
 
         // TYPE_MATCHUP 처리
         if (intent === 'TYPE_MATCHUP') {
-            console.log(`[Ollama] 타입 상성 계산 중 (스트리밍): "${question}"`);
+            console.log(`[OpenAI] 타입 상성 계산 중 (스트리밍): "${question}"`);
 
             const extracted = await extractEntities(question);
             const validated = await validateEntities(extracted);
@@ -376,12 +436,12 @@ export async function* askPokemonWikiStream(question: string) {
 
             yield { type: 'sql', content: typeQuery };
 
-            for (const result of typeResults) {
+            for (let index = 0; index < typeResults.length; index++) {
+                const result = typeResults[index];
                 const types = result.types.split(',');
                 const multipliers = calculateWeaknesses(types);
                 const formatted = formatWeaknesses(multipliers);
 
-                // 데이터를 코드가 직접 조립 (할루시네이션 방지)
                 const formName = result.form_name ? `${result.form_name} ` : '';
                 const fullName = `${formName}${result.name_ko}`;
 
@@ -408,17 +468,11 @@ export async function* askPokemonWikiStream(question: string) {
                     summary
                 );
 
-                const stream = await ollama.generate({
-                    model: MODEL,
-                    prompt: matchupPrompt,
-                    stream: true,
-                });
-
-                for await (const chunk of stream) {
-                    yield { type: 'answer', content: chunk.response };
+                for await (const token of streamGeneratedAnswer(matchupPrompt)) {
+                    yield { type: 'answer', content: token };
                 }
 
-                if (typeResults.length > 1) {
+                if (index < typeResults.length - 1) {
                     yield { type: 'answer', content: '\n\n' };
                 }
             }
@@ -428,7 +482,7 @@ export async function* askPokemonWikiStream(question: string) {
         }
 
         // 0-2. 엔티티 추출 및 검증
-        console.log(`[Ollama] 엔티티 추출 중: "${question}"`);
+        console.log(`[OpenAI] 엔티티 추출 중: "${question}"`);
         const extracted = await extractEntities(question);
         const validated = await validateEntities(extracted);
         console.log(`[Entities] 추출: [${extracted}], 검증됨: [${validated}]`);
@@ -436,7 +490,7 @@ export async function* askPokemonWikiStream(question: string) {
         for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
             try {
                 // 1. SQL 생성 (검증된 엔티티 전달)
-                console.log(`[Ollama] SQL 생성 중 (시도 ${attempt}/${MAX_RETRIES}): "${question}"`);
+                console.log(`[OpenAI] SQL 생성 중 (시도 ${attempt}/${MAX_RETRIES}): "${question}"`);
                 currentSQL = await generateSQL(question, currentSQL, lastError, validated, intent);
                 console.log(`[SQL] ${currentSQL}`);
 
@@ -450,19 +504,13 @@ export async function* askPokemonWikiStream(question: string) {
                 // 3. 답변 스트리밍 생성
                 const answerPrompt = ANSWER_GENERATION_PROMPT(question, currentSQL, results);
 
-                console.log(`[Ollama] 스트리밍 답변 생성 중...`);
-                const stream = await ollama.generate({
-                    model: MODEL,
-                    prompt: answerPrompt,
-                    stream: true,
-                });
-
-                for await (const chunk of stream) {
-                    yield { type: 'answer', content: chunk.response };
+                console.log(`[OpenAI] 스트리밍 답변 생성 중...`);
+                for await (const token of streamGeneratedAnswer(answerPrompt)) {
+                    yield { type: 'answer', content: token };
                 }
 
                 yield { type: 'done', content: '' };
-                return; // 성공 시 종료
+                return;
 
             } catch (error: any) {
                 console.error(`[Attempt ${attempt}] LLM 처리 중 오류:`, error.message);
@@ -475,6 +523,9 @@ export async function* askPokemonWikiStream(question: string) {
                 console.log(`[Retry] 에러를 바탕으로 다시 시도합니다...`);
             }
         }
+
+        yield { type: 'error', content: '질문을 분석하는 과정에서 응답을 생성하지 못했습니다.' };
+        return;
     } catch (error: any) {
         console.error('LLM 처리 과정 중 오류:', error);
         yield { type: 'error', content: "질문을 분석하는 과정에서 오류가 발생했습니다." };

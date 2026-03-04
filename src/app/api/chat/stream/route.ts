@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { askPokemonWikiStream } from '@/lib/ollama';
+import { askPokemonWikiStream } from '@/lib/llm';
 
 export async function POST(request: NextRequest) {
     try {
