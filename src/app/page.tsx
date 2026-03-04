@@ -274,6 +274,9 @@ export default function Home() {
               <span className="text-amber-400 text-xl">🤖</span>
               <span className="text-amber-400 font-semibold">AI 답변</span>
             </div>
+            <p className="text-xs text-slate-400 mb-3">
+              ※ AI 생성 답변은 오류가 있을 수 있습니다. 성능 개선을 위해 노력 중이며, 정확한 정보는 직접 포켓몬을 검색해서 확인할 수 있습니다.
+            </p>
             <p className="text-slate-200 leading-relaxed whitespace-pre-wrap">
               {chatAnswer}
             </p>
