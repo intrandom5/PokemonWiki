@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 
 // 타입 목록
@@ -64,7 +64,9 @@ interface PokemonDetail {
 
 export default function Home() {
   const [pokemon, setPokemon] = useState<Pokemon[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const hasLoadedOnceRef = useRef(false);
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
 
   // 필터 상태 (배열로 변경)
@@ -85,7 +87,12 @@ export default function Home() {
 
   // 포켓몬 목록 로드
   const loadPokemon = useCallback(async () => {
-    setLoading(true);
+    if (hasLoadedOnceRef.current) {
+      setIsRefreshing(true);
+    } else {
+      setInitialLoading(true);
+    }
+
     try {
       const params = new URLSearchParams();
       params.set("limit", "24");
@@ -111,7 +118,11 @@ export default function Home() {
     } catch (error) {
       console.error("로드 실패:", error);
     } finally {
-      setLoading(false);
+      if (!hasLoadedOnceRef.current) {
+        hasLoadedOnceRef.current = true;
+        setInitialLoading(false);
+      }
+      setIsRefreshing(false);
     }
   }, [page, selectedGenerations, selectedTypes, nameSearch]);
 
@@ -139,6 +150,15 @@ export default function Home() {
         prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
       );
     }
+    setPage(1);
+  };
+
+  const handleResetSearchAndFilters = () => {
+    setSearchQuery("");
+    setNameSearch("");
+    setSelectedGenerations([]);
+    setSelectedTypes([]);
+    setChatAnswer("");
     setPage(1);
   };
 
@@ -277,6 +297,12 @@ export default function Home() {
           >
             찾기
           </button>
+          <button
+            className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl border border-slate-600 transition-all"
+            onClick={handleResetSearchAndFilters}
+          >
+            검색 초기화
+          </button>
         </div>
       </section>
 
@@ -341,7 +367,10 @@ export default function Home() {
 
       {/* 포켓몬 그리드 */}
       <section className="max-w-6xl mx-auto px-4">
-        {loading ? (
+        {isRefreshing && (
+          <div className="mb-4 text-sm text-slate-400">목록 업데이트 중...</div>
+        )}
+        {initialLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {[...Array(24)].map((_, i) => (
               <div
