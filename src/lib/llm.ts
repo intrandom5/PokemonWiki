@@ -31,6 +31,48 @@ type ChatCompletionResponse = {
     }>;
 };
 
+function extractJsonObject(text: string): string | null {
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start === -1 || end === -1 || end <= start) {
+        return null;
+    }
+    return text.slice(start, end + 1);
+}
+
+function parseIntentJson(text: string): PokemonIntent | null {
+    const jsonText = extractJsonObject(text);
+    if (!jsonText) return null;
+
+    try {
+        const parsed = JSON.parse(jsonText) as { intent?: string };
+        const intent = parsed.intent?.trim() as PokemonIntent | undefined;
+        if (!intent) return null;
+
+        const validIntents: PokemonIntent[] = ['POKEMON_INFO', 'POKEMON_COMPARE', 'TYPE_MATCHUP', 'RECOMMENDATION', 'UNKNOWN'];
+        return validIntents.includes(intent) ? intent : null;
+    } catch {
+        return null;
+    }
+}
+
+function parseEntitiesJson(text: string): string[] | null {
+    const jsonText = extractJsonObject(text);
+    if (!jsonText) return null;
+
+    try {
+        const parsed = JSON.parse(jsonText) as { entities?: unknown[] };
+        if (!Array.isArray(parsed.entities)) return null;
+
+        return parsed.entities
+            .filter((value): value is string => typeof value === 'string')
+            .map((name) => name.trim())
+            .filter((name) => name.length > 0);
+    } catch {
+        return null;
+    }
+}
+
 async function callOpenAI(prompt: string, temperature = 0, stream = false): Promise<Response> {
     ensureApiKey();
 
@@ -68,8 +110,10 @@ async function generateText(prompt: string, temperature = 0): Promise<string> {
 async function classifyQuestion(question: string): Promise<PokemonIntent> {
     const prompt = INTENT_CLASSIFICATION_PROMPT(question);
     const text = await generateText(prompt, 0);
+    const parsedIntent = parseIntentJson(text);
+    if (parsedIntent) return parsedIntent;
 
-    const intent = text.trim() as PokemonIntent;
+    const intent = text.replace(/["'`]/g, '').trim() as PokemonIntent;
     const validIntents: PokemonIntent[] = ['POKEMON_INFO', 'POKEMON_COMPARE', 'TYPE_MATCHUP', 'RECOMMENDATION', 'UNKNOWN'];
 
     return validIntents.includes(intent) ? intent : 'UNKNOWN';
@@ -81,6 +125,8 @@ async function classifyQuestion(question: string): Promise<PokemonIntent> {
 async function extractEntities(question: string): Promise<string[]> {
     const prompt = ENTITY_EXTRACTION_PROMPT(question);
     const text = await generateText(prompt, 0);
+    const parsedEntities = parseEntitiesJson(text);
+    if (parsedEntities) return parsedEntities.slice(0, 5);
 
     return text.split(',').map(s => s.trim()).filter(s => s.length > 0);
 }
@@ -143,7 +189,7 @@ async function generateSQL(question: string, previousSQL?: string, previousError
 /**
  * 2단계: 실행 결과와 질문을 바탕으로 답변을 생성합니다.
  */
-async function generateAnswer(question: string, sql: string, results: any[]): Promise<string> {
+async function generateAnswer(question: string, sql: string, results: unknown[]): Promise<string> {
     const answerPrompt = ANSWER_GENERATION_PROMPT(question, sql, results);
     return generateText(answerPrompt, 0.3);
 }
@@ -195,7 +241,7 @@ export async function askPokemonWiki(question: string) {
     const db = getDatabase();
     let currentSQL = '';
     let lastError = '';
-    const MAX_RETRIES = 3;
+    const MAX_RETRIES = 2;
 
     try {
         // 0-1. 의도 분류
@@ -377,7 +423,7 @@ export async function* askPokemonWikiStream(question: string): AsyncGenerator<St
     const db = getDatabase();
     let currentSQL = '';
     let lastError = '';
-    const MAX_RETRIES = 3;
+    const MAX_RETRIES = 2;
 
     try {
         // 0-1. 의도 분류
