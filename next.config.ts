@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  outputFileTracingIncludes: {
+    "/*": ["./data/pokemon.db"],
+  },
   images: {
     remotePatterns: [
       {

@@ -1,16 +1,48 @@
 import Database from 'better-sqlite3';
+import fs from 'fs';
 import path from 'path';
 
-// 데이터베이스 파일 경로
-const dbPath = path.join(process.cwd(), 'data', 'pokemon.db');
+const DB_FILE = 'pokemon.db';
+
+function resolveDatabasePath(): string {
+  if (process.env.DATABASE_PATH) {
+    return process.env.DATABASE_PATH;
+  }
+
+  const candidates = [
+    path.join(process.cwd(), 'data', DB_FILE),
+    path.join('/var/task', 'data', DB_FILE),
+    path.join(__dirname, '..', '..', '..', 'data', DB_FILE),
+    path.join(__dirname, '..', '..', 'data', DB_FILE),
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  throw new Error(
+    `데이터베이스 파일을 찾을 수 없습니다. checked=${candidates.join(', ')} cwd=${process.cwd()}`
+  );
+}
 
 // 데이터베이스 연결
 let db: Database.Database | null = null;
 
 export function getDatabase(): Database.Database {
   if (!db) {
-    db = new Database(dbPath);
-    db.pragma('journal_mode = WAL'); // 성능 최적화
+    const dbPath = resolveDatabasePath();
+    const readOnly = process.env.DB_READONLY === '1' || process.env.VERCEL === '1';
+
+    db = new Database(dbPath, {
+      readonly: readOnly,
+      fileMustExist: true,
+    });
+
+    if (!readOnly) {
+      db.pragma('journal_mode = WAL'); // 로컬 성능 최적화
+    }
   }
   return db;
 }
