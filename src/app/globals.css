@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 :root {
-    --background: #0f172a;
-    --foreground: #f1f5f9;
-    --card-bg: #1e293b;
-    --card-hover: #334155;
-    --primary: #f59e0b;
-    --primary-dark: #d97706;
-    --accent: #06b6d4;
-    --muted: #64748b;
+    --background: #111111;
+    --foreground: #f4f4f5;
+    --card-bg: #1f1f1f;
+    --card-hover: #2a2a2a;
+    --primary: #dc2626;
+    --primary-dark: #b91c1c;
+    --accent: #f87171;
+    --muted: #71717a;
 }
 
 @theme inline {
@@ -19,7 +19,10 @@
 }
 
 body {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    background:
+        radial-gradient(ellipse at top, #2a0a0a 0%, transparent 60%),
+        linear-gradient(180deg, #111111 0%, #181818 100%);
+    background-attachment: fixed;
     color: var(--foreground);
     font-family: "Geist", Arial, Helvetica, sans-serif;
     min-height: 100vh;
@@ -28,79 +31,92 @@ body {
 /* 타입별 색상 */
 .type-노말 {
     background: #A8A878;
+    color: white;
 }
 
 .type-불꽃 {
     background: #F08030;
+    color: white;
 }
 
 .type-물 {
     background: #6890F0;
+    color: white;
 }
 
 .type-풀 {
     background: #78C850;
+    color: white;
 }
 
 .type-전기 {
     background: #F8D030;
-    color: #1e293b;
+    color: #1a1a1a;
 }
 
 .type-얼음 {
     background: #98D8D8;
-    color: #1e293b;
+    color: #1a1a1a;
 }
 
 .type-격투 {
     background: #C03028;
+    color: white;
 }
 
 .type-독 {
     background: #A040A0;
+    color: white;
 }
 
 .type-땅 {
     background: #E0C068;
-    color: #1e293b;
+    color: #1a1a1a;
 }
 
 .type-비행 {
     background: #A890F0;
+    color: white;
 }
 
 .type-에스퍼 {
     background: #F85888;
+    color: white;
 }
 
 .type-벌레 {
     background: #A8B820;
+    color: white;
 }
 
 .type-바위 {
     background: #B8A038;
+    color: white;
 }
 
 .type-고스트 {
     background: #705898;
+    color: white;
 }
 
 .type-드래곤 {
     background: #7038F8;
+    color: white;
 }
 
 .type-악 {
     background: #705848;
+    color: white;
 }
 
 .type-강철 {
     background: #B8B8D0;
-    color: #1e293b;
+    color: #1a1a1a;
 }
 
 .type-페어리 {
     background: #EE99AC;
-    color: #1e293b;
+    color: #1a1a1a;
 }
 
 /* 세대별 테마 색상 */
@@ -156,12 +172,12 @@ body {
 
 .pokemon-card:hover {
     transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(220, 38, 38, 0.2);
 }
 
 /* 검색창 글로우 효과 */
 .search-input:focus {
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+    box-shadow: 0 0 20px rgba(220, 38, 38, 0.35);
 }
 
 /* 스크롤바 스타일 */
@@ -170,29 +186,22 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-    background: #1e293b;
+    background: #1a1a1a;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #475569;
+    background: #3f3f46;
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #64748b;
+    background: #52525b;
 }
 
 /* 로딩 애니메이션 */
 @keyframes pulse-glow {
-
-    0%,
-    100% {
-        opacity: 0.6;
-    }
-
-    50% {
-        opacity: 1;
-    }
+    0%, 100% { opacity: 0.6; }
+    50%       { opacity: 1; }
 }
 
 .loading-pulse {
@@ -213,7 +222,6 @@ body {
 .filter-btn.active {
     opacity: 1 !important;
     transform: scale(1.05);
-    ring: 2px solid white;
     filter: saturate(1.5) brightness(1.1);
     box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
 }

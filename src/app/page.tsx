@@ -239,10 +239,10 @@ export default function Home() {
     <main className="min-h-screen pb-20">
       {/* 헤더 */}
       <header className="text-center py-12">
-        <h1 className="text-5xl font-bold bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 bg-clip-text text-transparent mb-4">
+        <h1 className="text-5xl font-bold bg-gradient-to-r from-red-300 via-red-500 to-rose-600 bg-clip-text text-transparent mb-4">
           포켓몬 위키
         </h1>
-        <p className="text-slate-400 text-lg">
+        <p className="text-zinc-400 text-lg">
           AI가 답변하는 포켓몬 백과사전
         </p>
       </header>
@@ -256,12 +256,12 @@ export default function Home() {
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             placeholder="궁금한 포켓몬 정보를 물어보세요... (예: 피카츄의 타입이 뭐야?)"
-            className="search-input w-full px-6 py-4 bg-slate-800/80 backdrop-blur border border-slate-600 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-all"
+            className="search-input w-full px-6 py-4 bg-zinc-800/80 backdrop-blur border border-zinc-600 rounded-2xl text-white placeholder-zinc-400 focus:outline-none focus:border-red-600 transition-all"
           />
           <button
             onClick={handleSearch}
             disabled={chatLoading}
-            className="absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 rounded-xl text-white font-semibold transition-all disabled:opacity-50"
+            className="absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-xl text-white font-semibold transition-all disabled:opacity-50"
           >
             {chatLoading ? "검색 중..." : "검색"}
           </button>
@@ -269,15 +269,15 @@ export default function Home() {
 
         {/* AI 답변 */}
         {chatAnswer && (
-          <div className="mt-4 p-6 bg-slate-800/60 backdrop-blur border border-slate-600 rounded-2xl">
+          <div className="mt-4 p-6 bg-zinc-800/60 backdrop-blur border border-zinc-600 rounded-2xl">
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-amber-400 text-xl">🤖</span>
-              <span className="text-amber-400 font-semibold">AI 답변</span>
+              <span className="text-red-400 text-xl">🤖</span>
+              <span className="text-red-400 font-semibold">AI 답변</span>
             </div>
-            <p className="text-xs text-slate-400 mb-3">
+            <p className="text-xs text-zinc-400 mb-3">
               ※ AI 생성 답변은 오류가 있을 수 있습니다. 성능 개선을 위해 노력 중이며, 정확한 정보는 직접 포켓몬을 검색해서 확인할 수 있습니다.
             </p>
-            <p className="text-slate-200 leading-relaxed whitespace-pre-wrap">
+            <p className="text-zinc-200 leading-relaxed whitespace-pre-wrap">
               {chatAnswer}
             </p>
           </div>
@@ -292,16 +292,16 @@ export default function Home() {
             value={nameSearch}
             onChange={(e) => setNameSearch(e.target.value)}
             placeholder="포켓몬 이름으로 찾기 (예: 망나뇽, Mewtwo)"
-            className="flex-1 px-5 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/50 transition-all font-medium"
+            className="flex-1 px-5 py-3 bg-zinc-800/50 border border-zinc-700 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-red-600/50 transition-all font-medium"
           />
           <button
-            className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-xl transition-all"
+            className="px-6 py-3 bg-zinc-700 hover:bg-zinc-600 text-white font-semibold rounded-xl transition-all"
             onClick={() => setPage(1)}
           >
             찾기
           </button>
           <button
-            className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl border border-slate-600 transition-all"
+            className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold rounded-xl border border-zinc-600 transition-all"
             onClick={handleResetSearchAndFilters}
           >
             검색 초기화
@@ -313,13 +313,13 @@ export default function Home() {
       <section className="max-w-6xl mx-auto px-4 mb-8">
         {/* 세대 필터 */}
         <div className="mb-6">
-          <h3 className="text-slate-400 text-sm mb-3 font-medium">세대 필터</h3>
+          <h3 className="text-zinc-400 text-sm mb-3 font-medium">세대 필터</h3>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => handleGenerationChange(null)}
               className={`filter-btn px-4 py-2 rounded-lg font-medium transition-all ${selectedGenerations.length === 0
-                ? "bg-amber-500 text-white active"
-                : "bg-slate-700 text-slate-300 filter-dimmed"
+                ? "bg-red-500 text-white active"
+                : "bg-zinc-700 text-zinc-300 filter-dimmed"
                 }`}
             >
               전체
@@ -341,13 +341,13 @@ export default function Home() {
 
         {/* 타입 필터 */}
         <div>
-          <h3 className="text-slate-400 text-sm mb-3 font-medium">타입 필터</h3>
+          <h3 className="text-zinc-400 text-sm mb-3 font-medium">타입 필터</h3>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => handleTypeChange(null)}
               className={`filter-btn px-4 py-2 rounded-lg font-medium transition-all ${selectedTypes.length === 0
-                ? "bg-amber-500 text-white active"
-                : "bg-slate-700 text-slate-300 filter-dimmed"
+                ? "bg-red-500 text-white active"
+                : "bg-zinc-700 text-zinc-300 filter-dimmed"
                 }`}
             >
               전체
@@ -371,14 +371,14 @@ export default function Home() {
       {/* 포켓몬 그리드 */}
       <section className="max-w-6xl mx-auto px-4">
         {isRefreshing && (
-          <div className="mb-4 text-sm text-slate-400">목록 업데이트 중...</div>
+          <div className="mb-4 text-sm text-zinc-400">목록 업데이트 중...</div>
         )}
         {initialLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {[...Array(24)].map((_, i) => (
               <div
                 key={i}
-                className="loading-pulse bg-slate-800 rounded-2xl aspect-square"
+                className="loading-pulse bg-zinc-800 rounded-2xl aspect-square"
               />
             ))}
           </div>
@@ -389,7 +389,7 @@ export default function Home() {
                 <div
                   key={p.id}
                   onClick={() => handleCardClick(p.id)}
-                  className="pokemon-card bg-slate-800/80 backdrop-blur border border-slate-700 rounded-2xl p-4 cursor-pointer"
+                  className="pokemon-card bg-zinc-800/80 backdrop-blur border border-zinc-700 rounded-2xl p-4 cursor-pointer"
                 >
                   <div className="relative aspect-square mb-3">
                     {p.image_url ? (
@@ -401,19 +401,19 @@ export default function Home() {
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-slate-700 rounded-xl">
-                        <span className="text-4xl text-slate-500">?</span>
+                      <div className="w-full h-full flex items-center justify-center bg-zinc-700 rounded-xl">
+                        <span className="text-4xl text-zinc-500">?</span>
                       </div>
                     )}
                   </div>
                   <div className="text-center">
-                    <p className="text-slate-500 text-xs mb-1">
+                    <p className="text-zinc-500 text-xs mb-1">
                       No.{p.national_dex}
                     </p>
                     <h3 className="text-white font-semibold text-sm">
                       {p.name_ko}
                       {p.form_name && (
-                        <span className="text-slate-400 text-xs ml-1">
+                        <span className="text-zinc-400 text-xs ml-1">
                           ({p.form_name})
                         </span>
                       )}
@@ -439,11 +439,11 @@ export default function Home() {
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="px-6 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 rounded-lg text-white transition-all"
+                  className="px-6 py-2 bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 rounded-lg text-white transition-all"
                 >
                   이전
                 </button>
-                <span className="text-slate-400">
+                <span className="text-zinc-400">
                   {page} / {pagination.totalPages} 페이지
                 </span>
                 <button
@@ -451,7 +451,7 @@ export default function Home() {
                     setPage((p) => Math.min(pagination.totalPages, p + 1))
                   }
                   disabled={page === pagination.totalPages}
-                  className="px-6 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 rounded-lg text-white transition-all"
+                  className="px-6 py-2 bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 rounded-lg text-white transition-all"
                 >
                   다음
                 </button>
@@ -468,20 +468,20 @@ export default function Home() {
           onClick={closeModal}
         >
           <div
-            className="relative bg-slate-900 border border-slate-600 rounded-3xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+            className="relative bg-zinc-900 border border-zinc-600 rounded-3xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 닫기 버튼 */}
             <button
               onClick={closeModal}
-              className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-slate-700 hover:bg-slate-600 rounded-full text-white text-xl transition-all z-10"
+              className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-zinc-700 hover:bg-zinc-600 rounded-full text-white text-xl transition-all z-10"
             >
               ×
             </button>
 
             {modalLoading ? (
               <div className="p-12 text-center">
-                <div className="loading-pulse text-slate-400">로딩 중...</div>
+                <div className="loading-pulse text-zinc-400">로딩 중...</div>
               </div>
             ) : selectedPokemon && (
               <div className="p-6">
@@ -496,20 +496,20 @@ export default function Home() {
                         className="object-contain"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-slate-700 rounded-xl">
-                        <span className="text-6xl text-slate-500">?</span>
+                      <div className="w-full h-full flex items-center justify-center bg-zinc-700 rounded-xl">
+                        <span className="text-6xl text-zinc-500">?</span>
                       </div>
                     )}
                   </div>
                   <div className="text-center md:text-left">
-                    <p className="text-slate-500 text-sm">No.{selectedPokemon.national_dex}</p>
+                    <p className="text-zinc-500 text-sm">No.{selectedPokemon.national_dex}</p>
                     <h2 className="text-3xl font-bold text-white mb-2">
                       {selectedPokemon.name_ko}
                       {selectedPokemon.form_name && (
-                        <span className="text-slate-400 text-lg ml-2">({selectedPokemon.form_name})</span>
+                        <span className="text-zinc-400 text-lg ml-2">({selectedPokemon.form_name})</span>
                       )}
                     </h2>
-                    <p className="text-slate-400 mb-3">{selectedPokemon.name_en}</p>
+                    <p className="text-zinc-400 mb-3">{selectedPokemon.name_en}</p>
                     <div className="flex justify-center md:justify-start gap-2">
                       {selectedPokemon.types?.map((t) => (
                         <span key={t.name_ko} className={`type-${t.name_ko} px-3 py-1 rounded-lg font-medium`}>
@@ -522,20 +522,20 @@ export default function Home() {
 
                 {/* 종족값 */}
                 <div className="mb-8">
-                  <h3 className="text-amber-400 font-semibold mb-4 text-lg">📊 종족값</h3>
+                  <h3 className="text-red-400 font-semibold mb-4 text-lg">📊 종족값</h3>
                   {selectedPokemon.stats && (
                     <div className="space-y-2">
                       {[
                         { label: 'HP', value: selectedPokemon.stats.hp, color: 'bg-red-500' },
-                        { label: '공격', value: selectedPokemon.stats.attack, color: 'bg-orange-500' },
+                        { label: '공격', value: selectedPokemon.stats.attack, color: 'bg-red-600' },
                         { label: '방어', value: selectedPokemon.stats.defense, color: 'bg-yellow-500' },
                         { label: '특공', value: selectedPokemon.stats.sp_attack, color: 'bg-blue-500' },
                         { label: '특방', value: selectedPokemon.stats.sp_defense, color: 'bg-green-500' },
                         { label: '스피드', value: selectedPokemon.stats.speed, color: 'bg-pink-500' },
                       ].map((stat) => (
                         <div key={stat.label} className="flex items-center gap-3">
-                          <span className="w-16 text-slate-400 text-sm">{stat.label}</span>
-                          <div className="flex-1 bg-slate-700 rounded-full h-3">
+                          <span className="w-16 text-zinc-400 text-sm">{stat.label}</span>
+                          <div className="flex-1 bg-zinc-700 rounded-full h-3">
                             <div
                               className={`${stat.color} h-3 rounded-full transition-all`}
                               style={{ width: `${Math.min(100, (stat.value / 255) * 100)}%` }}
@@ -544,9 +544,9 @@ export default function Home() {
                           <span className="w-10 text-right text-white font-medium">{stat.value}</span>
                         </div>
                       ))}
-                      <div className="flex items-center gap-3 pt-2 border-t border-slate-700">
-                        <span className="w-16 text-amber-400 text-sm font-semibold">합계</span>
-                        <span className="text-amber-400 font-bold text-lg">{selectedPokemon.stats.total}</span>
+                      <div className="flex items-center gap-3 pt-2 border-t border-zinc-700">
+                        <span className="w-16 text-red-400 text-sm font-semibold">합계</span>
+                        <span className="text-red-400 font-bold text-lg">{selectedPokemon.stats.total}</span>
                       </div>
                     </div>
                   )}
@@ -554,10 +554,10 @@ export default function Home() {
 
                 {/* 특성 */}
                 <div className="mb-8">
-                  <h3 className="text-amber-400 font-semibold mb-4 text-lg">✨ 특성</h3>
+                  <h3 className="text-red-400 font-semibold mb-4 text-lg">✨ 특성</h3>
                   <div className="space-y-2">
                     {selectedPokemon.abilities?.map((ability, i) => (
-                      <div key={i} className="bg-slate-800 rounded-xl p-3">
+                      <div key={i} className="bg-zinc-800 rounded-xl p-3">
                         <div className="flex items-center gap-2">
                           <span className="text-white font-medium">{ability.name_ko}</span>
                           {ability.is_hidden && (
@@ -565,7 +565,7 @@ export default function Home() {
                           )}
                         </div>
                         {ability.description && (
-                          <p className="text-slate-400 text-sm mt-1">{ability.description}</p>
+                          <p className="text-zinc-400 text-sm mt-1">{ability.description}</p>
                         )}
                       </div>
                     ))}
@@ -575,7 +575,7 @@ export default function Home() {
                 {/* 진화 */}
                 {selectedPokemon.evolutions && selectedPokemon.evolutions.length > 0 && (
                   <div className="mb-8">
-                    <h3 className="text-amber-400 font-semibold mb-4 text-lg">🔄 진화</h3>
+                    <h3 className="text-red-400 font-semibold mb-4 text-lg">🔄 진화</h3>
                     <div className="space-y-2">
                       {selectedPokemon.evolutions.map((evo: any, i: number) => {
                         // 진화 조건 텍스트 생성
@@ -682,12 +682,12 @@ export default function Home() {
                         const condition = getEvolutionCondition();
 
                         return (
-                          <div key={i} className="bg-slate-800 rounded-xl p-3 flex items-center gap-3 flex-wrap">
+                          <div key={i} className="bg-zinc-800 rounded-xl p-3 flex items-center gap-3 flex-wrap">
                             <span className="text-white">{evo.from_name || '?'}</span>
-                            <span className="text-amber-400">→</span>
+                            <span className="text-red-400">→</span>
                             <span className="text-white font-semibold">{evo.to_name || '?'}</span>
                             {condition && (
-                              <span className="text-cyan-400 text-sm bg-slate-700 px-2 py-0.5 rounded">
+                              <span className="text-cyan-400 text-sm bg-zinc-700 px-2 py-0.5 rounded">
                                 {condition}
                               </span>
                             )}
@@ -701,15 +701,15 @@ export default function Home() {
                 {/* 배우는 기술 */}
                 {selectedPokemon.moves && (
                   <div>
-                    <h3 className="text-amber-400 font-semibold mb-4 text-lg">⚔️ 배우는 기술</h3>
+                    <h3 className="text-red-400 font-semibold mb-4 text-lg">⚔️ 배우는 기술</h3>
 
                     {/* 탭 버튼 */}
                     <div className="flex gap-2 mb-4 flex-wrap">
                       <button
                         onClick={() => setSelectedMoveTab('level-up')}
                         className={`px-4 py-2 rounded-lg font-medium transition-all ${selectedMoveTab === 'level-up'
-                          ? 'bg-amber-500 text-white'
-                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          ? 'bg-red-500 text-white'
+                          : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
                           }`}
                       >
                         레벨업 ({selectedPokemon.moves['level-up']?.length || 0})
@@ -717,8 +717,8 @@ export default function Home() {
                       <button
                         onClick={() => setSelectedMoveTab('machine')}
                         className={`px-4 py-2 rounded-lg font-medium transition-all ${selectedMoveTab === 'machine'
-                          ? 'bg-amber-500 text-white'
-                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          ? 'bg-red-500 text-white'
+                          : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
                           }`}
                       >
                         기술머신 ({selectedPokemon.moves['machine']?.length || 0})
@@ -726,8 +726,8 @@ export default function Home() {
                       <button
                         onClick={() => setSelectedMoveTab('egg')}
                         className={`px-4 py-2 rounded-lg font-medium transition-all ${selectedMoveTab === 'egg'
-                          ? 'bg-amber-500 text-white'
-                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          ? 'bg-red-500 text-white'
+                          : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
                           }`}
                       >
                         유전기 ({selectedPokemon.moves['egg']?.length || 0})
@@ -735,8 +735,8 @@ export default function Home() {
                       <button
                         onClick={() => setSelectedMoveTab('tutor')}
                         className={`px-4 py-2 rounded-lg font-medium transition-all ${selectedMoveTab === 'tutor'
-                          ? 'bg-amber-500 text-white'
-                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          ? 'bg-red-500 text-white'
+                          : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
                           }`}
                       >
                         가르침 ({selectedPokemon.moves['tutor']?.length || 0})
@@ -746,12 +746,12 @@ export default function Home() {
                     {/* 기술 목록 */}
                     <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
                       {selectedPokemon.moves[selectedMoveTab]?.map((move: any, i: number) => (
-                        <details key={i} className="group bg-slate-800 rounded-lg p-2 text-sm cursor-pointer open:bg-slate-700/80 transition-colors">
+                        <details key={i} className="group bg-zinc-800 rounded-lg p-2 text-sm cursor-pointer open:bg-zinc-700/80 transition-colors">
                           <summary className="list-none flex flex-col gap-1">
                             <div className="flex justify-between items-center">
-                              <span className="text-white font-medium group-open:text-amber-400 transition-colors">{move.name_ko}</span>
+                              <span className="text-white font-medium group-open:text-red-400 transition-colors">{move.name_ko}</span>
                               {selectedMoveTab === 'level-up' && move.level_learned && (
-                                <span className="text-slate-500 text-xs">Lv.{move.level_learned}</span>
+                                <span className="text-zinc-500 text-xs">Lv.{move.level_learned}</span>
                               )}
                             </div>
                             <div className="flex gap-2 items-center">
@@ -761,22 +761,22 @@ export default function Home() {
                                 </span>
                               )}
                               {move.power ? (
-                                <span className="text-slate-400 text-xs">위력: {move.power}</span>
+                                <span className="text-zinc-400 text-xs">위력: {move.power}</span>
                               ) : (
-                                <span className="text-slate-500 text-xs">변화기</span>
+                                <span className="text-zinc-500 text-xs">변화기</span>
                               )}
                             </div>
                           </summary>
 
                           {/* 상세 정보 */}
-                          <div className="mt-2 pt-2 border-t border-slate-600/50 text-xs text-slate-300">
+                          <div className="mt-2 pt-2 border-t border-zinc-600/50 text-xs text-zinc-300">
                             <p className="mb-2 leading-relaxed">{move.description || '설명이 없습니다.'}</p>
-                            <div className="grid grid-cols-2 gap-y-1 text-slate-400">
-                              <span>🎯 명중률: <span className="text-slate-200">{move.accuracy || '-'}%</span></span>
-                              <span>💧 PP: <span className="text-slate-200">{move.pp || '-'}</span></span>
+                            <div className="grid grid-cols-2 gap-y-1 text-zinc-400">
+                              <span>🎯 명중률: <span className="text-zinc-200">{move.accuracy || '-'}%</span></span>
+                              <span>💧 PP: <span className="text-zinc-200">{move.pp || '-'}</span></span>
                               <span className="col-span-2">
-                                💥 분류: <span className={`${move.damage_class === 'physical' ? 'text-orange-400' :
-                                  move.damage_class === 'special' ? 'text-blue-400' : 'text-slate-400'
+                                💥 분류: <span className={`${move.damage_class === 'physical' ? 'text-red-400' :
+                                  move.damage_class === 'special' ? 'text-blue-400' : 'text-zinc-400'
                                   }`}>
                                   {move.damage_class === 'physical' ? '물리' :
                                     move.damage_class === 'special' ? '특수' : '변화'}
@@ -786,7 +786,7 @@ export default function Home() {
                           </div>
                         </details>
                       )) || (
-                          <div className="col-span-2 text-center text-slate-400 py-4">
+                          <div className="col-span-2 text-center text-zinc-400 py-4">
                             해당 방식으로 배우는 기술이 없습니다.
                           </div>
                         )}

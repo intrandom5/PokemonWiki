@@ -41,11 +41,11 @@ const MAX_ENTRY = 6;
 
 function effectivenessCell(val: number) {
   if (val === 4)   return { label: "4×", bg: "bg-red-600 text-white font-bold" };
-  if (val === 2)   return { label: "2×", bg: "bg-orange-500 text-white font-semibold" };
+  if (val === 2)   return { label: "2×", bg: "bg-red-600 text-white font-semibold" };
   if (val === 0.5) return { label: "½", bg: "bg-teal-600 text-white" };
   if (val === 0.25)return { label: "¼", bg: "bg-blue-600 text-white" };
-  if (val === 0)   return { label: "0", bg: "bg-slate-700 text-slate-400" };
-  return { label: "—", bg: "bg-transparent text-slate-700" };
+  if (val === 0)   return { label: "0", bg: "bg-zinc-700 text-zinc-400" };
+  return { label: "—", bg: "bg-transparent text-zinc-700" };
 }
 
 export default function EntryPage() {
@@ -194,19 +194,19 @@ export default function EntryPage() {
     <main className="min-h-screen pb-20">
       {/* 헤더 */}
       <header className="text-center py-10">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 bg-clip-text text-transparent mb-2">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-red-300 via-red-500 to-rose-600 bg-clip-text text-transparent mb-2">
           엔트리 꾸리기
         </h1>
-        <p className="text-slate-400">포켓몬을 최대 6마리까지 선택해 팀을 구성하세요</p>
+        <p className="text-zinc-400">포켓몬을 최대 6마리까지 선택해 팀을 구성하세요</p>
       </header>
 
       {/* 엔트리 슬롯 */}
       <section className="max-w-3xl mx-auto px-4 mb-6">
-        <div className="bg-slate-800/60 backdrop-blur border border-slate-600 rounded-2xl p-5">
+        <div className="bg-zinc-800/60 backdrop-blur border border-zinc-600 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-white font-semibold text-lg">
               내 엔트리
-              <span className="ml-2 text-slate-400 text-sm font-normal">
+              <span className="ml-2 text-zinc-400 text-sm font-normal">
                 ({entry.length}/{MAX_ENTRY})
               </span>
             </h2>
@@ -215,16 +215,16 @@ export default function EntryPage() {
                 <button
                   onClick={handleRandom}
                   disabled={entry.length >= MAX_ENTRY || randomLoading}
-                  className="px-4 py-1.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-white text-sm font-semibold transition-all"
+                  className="px-4 py-1.5 bg-gradient-to-r from-zinc-600 to-zinc-700 hover:from-zinc-500 hover:to-zinc-600 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-white text-sm font-semibold transition-all"
                 >
                   {randomLoading ? "선택 중..." : "랜덤 선택"}
                 </button>
-                <span className="text-slate-500 text-xs">현재 필터 내에서 랜덤으로 선택됩니다</span>
+                <span className="text-zinc-500 text-xs">현재 필터 내에서 랜덤으로 선택됩니다</span>
               </div>
               {entry.length > 0 && (
                 <button
                   onClick={() => setEntry([])}
-                  className="text-xs text-slate-400 hover:text-red-400 transition-colors"
+                  className="text-xs text-zinc-400 hover:text-red-400 transition-colors"
                 >
                   전체 제거
                 </button>
@@ -239,8 +239,8 @@ export default function EntryPage() {
                   key={i}
                   className={`aspect-square rounded-xl flex flex-col items-center justify-center relative border-2 transition-all ${
                     p
-                      ? "border-amber-500/60 bg-slate-700/60"
-                      : "border-slate-600/50 border-dashed bg-slate-800/40"
+                      ? "border-red-500/60 bg-zinc-700/60"
+                      : "border-zinc-600/50 border-dashed bg-zinc-800/40"
                   }`}
                 >
                   {p ? (
@@ -253,7 +253,7 @@ export default function EntryPage() {
                         className="object-contain"
                         unoptimized
                       />
-                      <span className="text-xs text-slate-300 text-center leading-tight px-1 truncate w-full text-center">
+                      <span className="text-xs text-zinc-300 text-center leading-tight px-1 truncate w-full text-center">
                         {p.name_ko}
                       </span>
                       <button
@@ -264,7 +264,7 @@ export default function EntryPage() {
                       </button>
                     </>
                   ) : (
-                    <span className="text-slate-600 text-2xl">+</span>
+                    <span className="text-zinc-600 text-2xl">+</span>
                   )}
                 </div>
               );
@@ -276,7 +276,7 @@ export default function EntryPage() {
       {/* 타입 상성 표 */}
       {chart.length > 0 && (
         <section className="max-w-5xl mx-auto px-4 mb-8">
-          <div className="bg-slate-800/60 backdrop-blur border border-slate-600 rounded-2xl p-5">
+          <div className="bg-zinc-800/60 backdrop-blur border border-zinc-600 rounded-2xl p-5">
             {/* 헤더: 탭 + 더보기 */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex gap-1">
@@ -289,8 +289,8 @@ export default function EntryPage() {
                     onClick={() => setChartTab(key)}
                     className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
                       chartTab === key
-                        ? "bg-amber-500 text-white"
-                        : "bg-slate-700 text-slate-400 border border-slate-600 hover:text-white"
+                        ? "bg-red-500 text-white"
+                        : "bg-zinc-700 text-zinc-400 border border-zinc-600 hover:text-white"
                     }`}
                   >
                     {label}
@@ -299,13 +299,13 @@ export default function EntryPage() {
               </div>
               <button
                 onClick={() => setShowDetails((v) => !v)}
-                className="text-xs px-3 py-1 rounded-lg bg-slate-700 text-slate-300 hover:text-white hover:bg-slate-600 border border-slate-600 transition-all"
+                className="text-xs px-3 py-1 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-600 border border-zinc-600 transition-all"
               >
                 {showDetails ? "개별 상성 접기 ▲" : "개별 상성 보기 ▼"}
               </button>
             </div>
 
-            <p className="text-slate-400 text-xs mb-4">
+            <p className="text-zinc-400 text-xs mb-4">
               {chartTab === "defense"
                 ? "상대가 해당 타입 기술을 사용했을 때 내 파티가 받는 배율. 저항/무효 포켓몬이 한 마리라도 있으면 보완된 것으로 처리합니다."
                 : "내 파티가 STAB으로 해당 타입 상대에게 줄 수 있는 최대 배율. 한 마리라도 약점을 찌를 수 있으면 커버 가능으로 표시합니다."}
@@ -315,7 +315,7 @@ export default function EntryPage() {
               <table className="w-full text-sm border-collapse" style={{ minWidth: "900px" }}>
                 <thead>
                   <tr>
-                    <th className="text-left text-slate-400 font-normal py-2 pr-3 w-24 sticky left-0 bg-slate-800/90">
+                    <th className="text-left text-zinc-400 font-normal py-2 pr-3 w-24 sticky left-0 bg-zinc-800/90">
                       {showDetails ? "포켓몬" : ""}
                     </th>
                     {TYPES.map((t) => (
@@ -329,8 +329,8 @@ export default function EntryPage() {
                 </thead>
                 <tbody>
                   {showDetails && chart.map((p) => (
-                    <tr key={p.id} className="border-t border-slate-700/50">
-                      <td className="py-2 pr-3 sticky left-0 bg-slate-800/90">
+                    <tr key={p.id} className="border-t border-zinc-700/50">
+                      <td className="py-2 pr-3 sticky left-0 bg-zinc-800/90">
                         <div className="flex items-center gap-1.5">
                           <Image
                             src={p.image_url}
@@ -360,9 +360,9 @@ export default function EntryPage() {
                   ))}
 
                   {/* 요약 행 */}
-                  <tr className={showDetails ? "border-t-2 border-slate-500" : ""}>
-                    <td className="py-2 pr-3 sticky left-0 bg-slate-800/90">
-                      <span className="text-slate-300 text-xs font-semibold">
+                  <tr className={showDetails ? "border-t-2 border-zinc-500" : ""}>
+                    <td className="py-2 pr-3 sticky left-0 bg-zinc-800/90">
+                      <span className="text-zinc-300 text-xs font-semibold">
                         {chartTab === "defense" ? "파티 취약도" : "파티 커버리지"}
                       </span>
                     </td>
@@ -375,13 +375,13 @@ export default function EntryPage() {
                         if (weak >= 1 && !covered) {
                           display = (
                             <span className={`inline-block w-8 h-6 leading-6 rounded text-xs font-bold ${
-                              weak >= 3 ? "bg-red-600 text-white" : weak === 2 ? "bg-orange-500 text-white" : "bg-yellow-600 text-white"
+                              weak >= 3 ? "bg-red-600 text-white" : weak === 2 ? "bg-red-600 text-white" : "bg-yellow-600 text-white"
                             }`}>
                               {weak}마리
                             </span>
                           );
                         } else {
-                          display = <span className="text-slate-600 text-xs">—</span>;
+                          display = <span className="text-zinc-600 text-xs">—</span>;
                         }
                       } else {
                         const count = offensiveSummary(t);
@@ -395,7 +395,7 @@ export default function EntryPage() {
                             </span>
                           );
                         } else {
-                          display = <span className="text-slate-600 text-xs">—</span>;
+                          display = <span className="text-zinc-600 text-xs">—</span>;
                         }
                       }
                       return (
@@ -410,42 +410,42 @@ export default function EntryPage() {
             </div>
 
             {/* 범례 */}
-            <div className="flex flex-wrap gap-3 mt-4 pt-3 border-t border-slate-700">
+            <div className="flex flex-wrap gap-3 mt-4 pt-3 border-t border-zinc-700">
               {showDetails && (
                 <>
-                  <span className="text-slate-400 text-xs self-center">배율:</span>
+                  <span className="text-zinc-400 text-xs self-center">배율:</span>
                   {[
                     { label: "4×", bg: "bg-red-600", text: "4배" },
-                    { label: "2×", bg: "bg-orange-500", text: "2배" },
+                    { label: "2×", bg: "bg-red-600", text: "2배" },
                     { label: "½",  bg: "bg-teal-600", text: "½배" },
                     { label: "¼",  bg: "bg-blue-600", text: "¼배" },
-                    { label: "0",  bg: "bg-slate-700", text: "무효" },
+                    { label: "0",  bg: "bg-zinc-700", text: "무효" },
                   ].map(({ label, bg, text }) => (
                     <div key={label} className="flex items-center gap-1">
                       <span className={`inline-block w-6 h-5 leading-5 rounded text-xs text-center text-white ${bg}`}>{label}</span>
-                      <span className="text-slate-400 text-xs">{text}</span>
+                      <span className="text-zinc-400 text-xs">{text}</span>
                     </div>
                   ))}
-                  <span className="text-slate-600 text-xs self-center mx-1">|</span>
+                  <span className="text-zinc-600 text-xs self-center mx-1">|</span>
                 </>
               )}
               {chartTab === "defense" ? (
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-slate-400 text-xs">파티 취약도 숫자 = 저항/무효 포켓몬을 제외하고 남은 약점 포켓몬 수</span>
+                  <span className="text-zinc-400 text-xs">파티 취약도 숫자 = 저항/무효 포켓몬을 제외하고 남은 약점 포켓몬 수</span>
                   <div className="flex items-center gap-1.5">
                     {[
                       { label: "3+", bg: "bg-red-600" },
-                      { label: "2",  bg: "bg-orange-500" },
+                      { label: "2",  bg: "bg-red-600" },
                       { label: "1",  bg: "bg-yellow-600" },
                     ].map(({ label, bg }) => (
                       <span key={label} className={`inline-block px-1.5 h-5 leading-5 rounded text-xs text-center text-white ${bg}`}>{label}</span>
                     ))}
-                    <span className="text-slate-400 text-xs">숫자가 클수록 취약</span>
+                    <span className="text-zinc-400 text-xs">숫자가 클수록 취약</span>
                   </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-slate-400 text-xs">파티 커버리지 숫자 = STAB으로 약점을 찌를 수 있는 포켓몬 수</span>
+                  <span className="text-zinc-400 text-xs">파티 커버리지 숫자 = STAB으로 약점을 찌를 수 있는 포켓몬 수</span>
                   <div className="flex items-center gap-1.5">
                     {[
                       { label: "3+", bg: "bg-emerald-500" },
@@ -454,7 +454,7 @@ export default function EntryPage() {
                     ].map(({ label, bg }) => (
                       <span key={label} className={`inline-block px-1.5 h-5 leading-5 rounded text-xs text-center text-white ${bg}`}>{label}</span>
                     ))}
-                    <span className="text-slate-400 text-xs">숫자가 클수록 커버 잘 됨</span>
+                    <span className="text-zinc-400 text-xs">숫자가 클수록 커버 잘 됨</span>
                   </div>
                 </div>
               )}
@@ -475,16 +475,16 @@ export default function EntryPage() {
               setPage(1);
             }}
             placeholder="포켓몬 이름으로 검색..."
-            className="flex-1 px-4 py-3 bg-slate-800/80 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-all"
+            className="flex-1 px-4 py-3 bg-zinc-800/80 border border-zinc-600 rounded-xl text-white placeholder-zinc-400 focus:outline-none focus:border-red-600 transition-all"
           />
-          <label className="flex items-center gap-2 px-4 py-3 bg-slate-800/80 border border-slate-600 rounded-xl cursor-pointer hover:border-amber-500/60 transition-all select-none">
+          <label className="flex items-center gap-2 px-4 py-3 bg-zinc-800/80 border border-zinc-600 rounded-xl cursor-pointer hover:border-red-500/60 transition-all select-none">
             <input
               type="checkbox"
               checked={finalOnly}
               onChange={(e) => { setFinalOnly(e.target.checked); setPage(1); }}
-              className="w-4 h-4 accent-amber-500 cursor-pointer"
+              className="w-4 h-4 accent-red-500 cursor-pointer"
             />
-            <span className="text-slate-300 text-sm whitespace-nowrap">최종 진화체만</span>
+            <span className="text-zinc-300 text-sm whitespace-nowrap">최종 진화체만</span>
           </label>
           {(nameSearch || selectedGenerations.length > 0 || selectedTypes.length > 0 || finalOnly) && (
             <button
@@ -495,7 +495,7 @@ export default function EntryPage() {
                 setFinalOnly(false);
                 setPage(1);
               }}
-              className="px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-slate-300 hover:text-white hover:border-slate-400 transition-all text-sm"
+              className="px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-xl text-zinc-300 hover:text-white hover:border-zinc-400 transition-all text-sm"
             >
               초기화
             </button>
@@ -508,8 +508,8 @@ export default function EntryPage() {
             onClick={() => { setSelectedGenerations([]); setPage(1); }}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
               selectedGenerations.length === 0
-                ? "bg-amber-500 text-white"
-                : "bg-slate-700 text-slate-400 hover:text-white border border-slate-600"
+                ? "bg-red-500 text-white"
+                : "bg-zinc-700 text-zinc-400 hover:text-white border border-zinc-600"
             }`}
           >
             전체
@@ -535,8 +535,8 @@ export default function EntryPage() {
             onClick={() => { setSelectedTypes([]); setPage(1); }}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
               selectedTypes.length === 0
-                ? "bg-amber-500 text-white"
-                : "bg-slate-700 text-slate-400 hover:text-white border border-slate-600"
+                ? "bg-red-500 text-white"
+                : "bg-zinc-700 text-zinc-400 hover:text-white border border-zinc-600"
             }`}
           >
             전체
@@ -562,7 +562,7 @@ export default function EntryPage() {
         {loading ? (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
             {Array.from({ length: 60 }).map((_, i) => (
-              <div key={i} className="aspect-square bg-slate-800/60 rounded-xl animate-pulse" />
+              <div key={i} className="aspect-square bg-zinc-800/60 rounded-xl animate-pulse" />
             ))}
           </div>
         ) : (
@@ -579,10 +579,10 @@ export default function EntryPage() {
                     disabled={inEntry || entryFull}
                     className={`flex flex-col items-center p-2 rounded-xl border transition-all text-left ${
                       inEntry
-                        ? "border-amber-500 bg-amber-500/10 opacity-60 cursor-not-allowed"
+                        ? "border-red-500 bg-red-500/10 opacity-60 cursor-not-allowed"
                         : entryFull
-                        ? "border-slate-700 bg-slate-800/40 opacity-40 cursor-not-allowed"
-                        : "border-slate-700 bg-slate-800/60 hover:border-amber-500/60 hover:bg-slate-700/60 cursor-pointer"
+                        ? "border-zinc-700 bg-zinc-800/40 opacity-40 cursor-not-allowed"
+                        : "border-zinc-700 bg-zinc-800/60 hover:border-red-500/60 hover:bg-zinc-700/60 cursor-pointer"
                     }`}
                   >
                     <div className="relative w-full aspect-square">
@@ -595,15 +595,15 @@ export default function EntryPage() {
                       />
                       {inEntry && (
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-amber-400 text-xl font-bold">✓</span>
+                          <span className="text-red-400 text-xl font-bold">✓</span>
                         </div>
                       )}
                     </div>
-                    <span className="text-slate-400 text-xs mt-1">No.{p.national_dex}</span>
+                    <span className="text-zinc-400 text-xs mt-1">No.{p.national_dex}</span>
                     <span className="text-white text-xs font-medium text-center leading-tight">
                       {p.name_ko}
                       {p.form_name && (
-                        <span className="text-slate-400 text-xs block">{p.form_name}</span>
+                        <span className="text-zinc-400 text-xs block">{p.form_name}</span>
                       )}
                     </span>
                     <div className="flex gap-1 mt-1 flex-wrap justify-center">
@@ -624,17 +624,17 @@ export default function EntryPage() {
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="px-4 py-2 bg-slate-800 border border-slate-600 rounded-xl text-slate-300 hover:text-white hover:border-slate-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  className="px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-xl text-zinc-300 hover:text-white hover:border-zinc-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                 >
                   이전
                 </button>
-                <span className="text-slate-400 text-sm">
+                <span className="text-zinc-400 text-sm">
                   {page} / {pagination.totalPages}
                 </span>
                 <button
                   onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
                   disabled={page === pagination.totalPages}
-                  className="px-4 py-2 bg-slate-800 border border-slate-600 rounded-xl text-slate-300 hover:text-white hover:border-slate-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  className="px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-xl text-zinc-300 hover:text-white hover:border-zinc-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                 >
                   다음
                 </button>

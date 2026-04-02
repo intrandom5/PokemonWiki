@@ -12,23 +12,30 @@ export default function NavTabs() {
   ];
 
   return (
-    <nav className="flex justify-center gap-2 pt-6 pb-2">
-      {tabs.map((tab) => {
-        const isActive = pathname === tab.href;
-        return (
-          <Link
-            key={tab.href}
-            href={tab.href}
-            className={`px-6 py-2 rounded-xl font-semibold text-sm transition-all ${
-              isActive
-                ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg"
-                : "bg-slate-800/80 text-slate-400 border border-slate-600 hover:border-amber-500 hover:text-amber-400"
-            }`}
-          >
-            {tab.label}
-          </Link>
-        );
-      })}
-    </nav>
+    <div>
+      {/* 몬스터볼 상단 빨간 띠 */}
+      <div className="h-1.5 bg-gradient-to-r from-red-800 via-red-600 to-red-800" />
+      {/* 몬스터볼 중앙 검은 띠 */}
+      <div className="h-0.5 bg-black" />
+
+      <nav className="flex justify-center gap-2 py-3 bg-zinc-900/80 backdrop-blur border-b border-zinc-800">
+        {tabs.map((tab) => {
+          const isActive = pathname === tab.href;
+          return (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              className={`px-6 py-2 rounded-lg font-semibold text-sm transition-all ${
+                isActive
+                  ? "bg-red-600 text-white shadow-lg shadow-red-900/40"
+                  : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+              }`}
+            >
+              {tab.label}
+            </Link>
+          );
+        })}
+      </nav>
+    </div>
   );
 }
