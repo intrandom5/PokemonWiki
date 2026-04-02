@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
     const generations = searchParams.getAll('generation'); // 다중 세대 필터
     const types = searchParams.getAll('type'); // 복수 타입 필터
     const name = searchParams.get('name') || ''; // 이름 검색
+    const finalOnly = searchParams.get('final_only') === '1'; // 최종 진화체만
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '30');
     const offset = (page - 1) * limit;
@@ -52,6 +53,11 @@ export async function GET(request: NextRequest) {
                 HAVING COUNT(DISTINCT t2.id) = ?
             )`);
             params.push(...types, types.length);
+        }
+
+        // 최종 진화체 필터 (evolutions 테이블에 from으로 등장하지 않는 포켓몬)
+        if (finalOnly) {
+            conditions.push(`p.id NOT IN (SELECT DISTINCT from_pokemon_id FROM evolutions WHERE from_pokemon_id IS NOT NULL)`);
         }
 
         // 이름 검색 (한글 또는 영어)

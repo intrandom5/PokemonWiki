@@ -70,6 +70,50 @@ export function calculateWeaknesses(types: string[]): Record<string, number> {
 }
 
 /**
+ * Build offense map: offenseMap[attackType][defendingType] = multiplier
+ * Derived by inverting defense_effectiveness.
+ */
+function buildOffenseMap(): Record<string, Record<string, number>> {
+    const data = loadTypeData();
+    const allTypes = Object.keys(data.defense_effectiveness);
+    // Initialize 1x for all pairs
+    const map: Record<string, Record<string, number>> = {};
+    for (const atk of allTypes) {
+        map[atk] = {};
+        for (const def of allTypes) map[atk][def] = 1;
+    }
+    for (const def of allTypes) {
+        const info = data.defense_effectiveness[def];
+        for (const atk of info.Weaknesses)   map[atk][def] = 2;
+        for (const atk of info.Resistances)  map[atk][def] = 0.5;
+        for (const atk of info.Immunities)   map[atk][def] = 0;
+    }
+    return map;
+}
+
+let offenseMapCache: Record<string, Record<string, number>> | null = null;
+
+/**
+ * Calculate offensive effectiveness for a pokemon with the given attack types (STAB).
+ * Returns: for each defending type D, the best multiplier achievable with the given attack types.
+ */
+export function calculateOffensive(attackTypes: string[]): Record<string, number> {
+    if (!offenseMapCache) offenseMapCache = buildOffenseMap();
+    const data = loadTypeData();
+    const allTypes = Object.keys(data.defense_effectiveness);
+    const result: Record<string, number> = {};
+    for (const def of allTypes) {
+        let best = 0;
+        for (const atk of attackTypes) {
+            const v = offenseMapCache[atk]?.[def] ?? 1;
+            if (v > best) best = v;
+        }
+        result[def] = best;
+    }
+    return result;
+}
+
+/**
  * Format weaknesses into a human-readable structure
  */
 export function formatWeaknesses(multipliers: Record<string, number>) {
